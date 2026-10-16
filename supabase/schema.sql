@@ -1,0 +1,18 @@
+create table staff(user_id uuid primary key references auth.users on delete cascade, role text not null check(role in('super','province')), province text);
+create table members(id uuid primary key default gen_random_uuid(), name text not null, phone text, email text, gender text, dob date, addr text, status text default 'Member', ministry text, asm text not null, prov text not null, baptised boolean default false, kin text, notes text, created_at timestamptz default now());
+create table events(id uuid primary key default gen_random_uuid(), title text not null, date date not null, time text, venue text, prov text);
+create table reports(id uuid primary key default gen_random_uuid(), prov text not null, asm text, date date not null, title text, preacher text, word text, count int not null default 0, women int, men int, youth int, sunday int);
+create table attendance(report_id uuid references reports on delete cascade, member_id uuid references members on delete cascade, primary key(report_id,member_id));
+create table team(id uuid primary key default gen_random_uuid(), name text not null, role text not null, asm text, prov text, photo_url text);
+create function is_super() returns boolean language sql security definer as $$ select exists(select 1 from staff where user_id=auth.uid() and role='super') $$;
+create function my_prov() returns text language sql security definer as $$ select province from staff where user_id=auth.uid() $$;
+alter table staff enable row level security; alter table members enable row level security; alter table events enable row level security; alter table reports enable row level security; alter table attendance enable row level security; alter table team enable row level security;
+create policy own_staff on staff for select using (user_id=auth.uid());
+create policy mem_all on members for all using (is_super() or prov=my_prov()) with check (is_super() or prov=my_prov());
+create policy ev_read on events for select using (true);
+create policy ev_write on events for all using (is_super() or prov=my_prov()) with check (is_super() or prov=my_prov());
+create policy rep_read on reports for select using (true);
+create policy rep_write on reports for all using (is_super() or prov=my_prov()) with check (is_super() or prov=my_prov());
+create policy att_all on attendance for all using (is_super() or exists(select 1 from reports r where r.id=report_id and r.prov=my_prov())) with check (is_super() or exists(select 1 from reports r where r.id=report_id and r.prov=my_prov()));
+create policy team_read on team for select using (true);
+create policy team_write on team for all using (is_super()) with check (is_super());
