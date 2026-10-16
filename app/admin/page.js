@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
 const PROV = ['Harare', 'Hwedza', 'Manicaland', 'Mozambique']
+const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const grp = m => {
   const a = m.dob ? Math.floor((Date.now() - new Date(m.dob)) / 31557600000) : null
   if (a !== null && a < 13) return 'sunday'
@@ -11,13 +12,14 @@ const grp = m => {
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
-  const [q, setQ] = useState(''), [present, setPresent] = useState(new Set()), [msg, setMsg] = useState('')
+  const [q, setQ] = useState(''), [present, setPresent] = useState(new Set()), [msg, setMsg] = useState(''), [team, setTeam] = useState([])
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
       const { data: s } = await db.from('staff').select('*').eq('user_id', user.id).maybeSingle()
       setMe(s)
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
+      if (s?.role === 'super') setTeam((await db.from('team').select('*').order('name')).data || [])
     }
     setReady(true)
   }, [])
@@ -51,6 +53,20 @@ export default function Admin() {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); o.prov = prov || o.prov
     const { error } = await db.from('events').insert(o); setMsg(error ? error.message : 'Event added'); if (!error) e.target.reset()
   }
+  async function addTeam(e) {
+    e.preventDefault(); const f = new FormData(e.target), file = f.get('photo')
+    const o = { name: f.get('name'), role: f.get('role'), asm: f.get('asm') || null, prov: f.get('prov') || null }
+    if (file && file.size) {
+      const path = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`
+      const { error } = await db.storage.from('team').upload(path, file)
+      if (error) return setMsg(`Photo upload failed: ${error.message}`)
+      o.photo_url = db.storage.from('team').getPublicUrl(path).data.publicUrl
+    }
+    const { error } = await db.from('team').insert(o)
+    if (error) return setMsg(error.message)
+    e.target.reset(); setMsg('Team member added'); load()
+  }
+  async function delTeam(id) { if (confirm('Remove this team member?')) { await db.from('team').delete().eq('id', id); load() } }
   if (!ready) return <p style={{ padding: 20 }}>Loading…</p>
   if (!me) return (
     <div className="wrap" style={{ maxWidth: 420, paddingTop: 60 }}><h2 style={{ marginTop: 0 }}>Admin login</h2>
@@ -85,6 +101,18 @@ export default function Admin() {
         <button className="btn">Publish report</button></form>
       <h2>Add event</h2>
       <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" /><ProvSel /></div><button className="btn">Add event</button></form>
+      {me.role === 'super' && <>
+        <h2>Meet the Team</h2>
+        <form className="card" onSubmit={addTeam}><div className="form">
+          <F l="Full name *" name="name" required />
+          <F l="Role *" name="role" list="roles" required /><datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
+          <F l="Assembly" name="asm" />
+          <div><label>Province</label><select name="prov"><option></option>{PROV.map(p => <option key={p}>{p}</option>)}</select></div>
+          <F l="Photo" name="photo" type="file" accept="image/*" />
+        </div><button className="btn">Add team member</button></form>
+        <div style={{ overflowX: 'auto', marginTop: 10 }}><table><thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Assembly</th><th>Province</th><th></th></tr></thead>
+          <tbody>{team.map(x => <tr key={x.id}><td>{x.photo_url && <img src={x.photo_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '50%' }} />}</td><td>{x.name}</td><td>{x.role}</td><td>{x.asm}</td><td>{x.prov}</td><td><button className="btn g" onClick={() => delTeam(x.id)}>Remove</button></td></tr>)}</tbody></table></div>
+      </>}
     </div>
   )
 }
