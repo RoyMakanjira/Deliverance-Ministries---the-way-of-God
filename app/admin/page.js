@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
-const PROV = ['Harare', 'Hwedza', 'Manicaland', 'Mozambique']
+import { ASSEMBLIES, PROV } from '@/lib/assemblies'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const grp = m => {
   const a = m.dob ? Math.floor((Date.now() - new Date(m.dob)) / 31557600000) : null
@@ -13,12 +13,14 @@ const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
   const [q, setQ] = useState(''), [present, setPresent] = useState(new Set()), [msg, setMsg] = useState(''), [team, setTeam] = useState([])
+  const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
       const { data: s } = await db.from('staff').select('*').eq('user_id', user.id).maybeSingle()
       setMe(s)
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
+      if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
       if (s?.role === 'super') setTeam((await db.from('team').select('*').order('name')).data || [])
     }
     setReady(true)
@@ -50,8 +52,23 @@ export default function Admin() {
     setPresent(new Set()); e.target.reset(); setMsg('Report published')
   }
   async function addEvent(e) {
-    e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); o.prov = prov || o.prov
-    const { error } = await db.from('events').insert(o); setMsg(error ? error.message : 'Event added'); if (!error) e.target.reset()
+    e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); o.prov = prov || o.prov; o.asms = [...selAsm]
+    const { error } = await db.from('events').insert(o)
+    if (error) return setMsg(error.message)
+    e.target.reset(); setSelAsm(new Set()); setMsg('Event added'); load()
+  }
+  const invited = ev => members.filter(m => ev.asms?.length ? ev.asms.includes(m.asm) : !ev.prov || m.prov === ev.prov)
+  async function openAtt(ev) {
+    if (open === ev.id) return setOpen(null)
+    const { data } = await db.from('event_attendance').select('member_id,status').eq('event_id', ev.id)
+    setMarks(Object.fromEntries((data || []).map(r => [r.member_id, r.status]))); setOpen(ev.id)
+  }
+  async function saveAtt(ev) {
+    const all = Object.entries(marks), set = all.filter(([, s]) => s).map(([member_id, status]) => ({ event_id: ev.id, member_id, status }))
+    const cleared = all.filter(([, s]) => !s).map(([id]) => id)
+    if (set.length) { const { error } = await db.from('event_attendance').upsert(set); if (error) return setMsg(error.message) }
+    if (cleared.length) await db.from('event_attendance').delete().eq('event_id', ev.id).in('member_id', cleared)
+    setMsg(`Attendance saved for ${ev.title}`)
   }
   async function addTeam(e) {
     e.preventDefault(); const f = new FormData(e.target), file = f.get('photo')
@@ -73,16 +90,18 @@ export default function Admin() {
       <form className="card" onSubmit={login}><F l="Email" name="email" type="email" required /><br /><F l="Password" name="password" type="password" required /><br />
         <button className="btn">Sign in</button><p className="mu">{msg || 'Sign in with the account your national admin created for you.'}</p></form></div>
   )
+  const assemblies = [...new Set([...(prov ? ASSEMBLIES[prov] || [] : Object.values(ASSEMBLIES).flat()), ...members.map(m => m.asm).filter(Boolean)])].sort()
   const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm}`.toLowerCase().includes(q.toLowerCase()))
   return (
     <div className="wrap" style={{ paddingTop: 20 }}>
+      <datalist id="asms">{assemblies.map(a => <option key={a} value={a} />)}</datalist>
       <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button> <b>{msg}</b></p>
       <div className="grid">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
       <h2>Add congregant</h2>
       <form className="card" onSubmit={addMember}><div className="form">
         <F l="Full name *" name="name" required /><F l="Phone" name="phone" /><F l="Email" name="email" />
         <div><label>Gender</label><select name="gender"><option></option><option>Male</option><option>Female</option></select></div>
-        <F l="Date of birth" name="dob" type="date" /><F l="Address" name="addr" /><F l="Assembly *" name="asm" required /><ProvSel />
+        <F l="Date of birth" name="dob" type="date" /><F l="Address" name="addr" /><F l="Assembly *" name="asm" list="asms" required /><ProvSel />
         <div><label>Status</label><select name="status"><option>Member</option><option>Visitor</option><option>New Convert</option><option>Inactive</option></select></div>
         <F l="Ministry" name="ministry" /><div><label>Baptised?</label><select name="baptised"><option>No</option><option>Yes</option></select></div><F l="Next of kin" name="kin" /><F l="Notes" name="notes" />
       </div><button className="btn">Save congregant</button></form>
@@ -92,7 +111,7 @@ export default function Admin() {
         <tbody>{list.map(m => <tr key={m.id}><td>{m.name}</td><td>{m.asm}</td><td>{m.prov}</td><td>{m.phone}</td><td>{m.status}</td><td><button className="btn g" onClick={() => delMember(m.id)}>Delete</button></td></tr>)}</tbody></table></div>
       <h2>Service / Big Sunday report</h2>
       <form className="card" onSubmit={addReport}><div className="form">
-        <ProvSel /><F l="Assembly / venue" name="asm" /><F l="Date *" name="date" type="date" required /><F l="Total attendance (min = ticked)" name="count" type="number" min="0" />
+        <ProvSel /><F l="Assembly / venue" name="asm" list="asms" /><F l="Date *" name="date" type="date" required /><F l="Total attendance (min = ticked)" name="count" type="number" min="0" />
         <F l="Preacher" name="preacher" /><F l="Title / scripture" name="title" /></div>
         <label>The word (summary)</label><textarea name="word" rows="3" />
         <details style={{ margin: '10px 0' }}><summary>Mark who attended ({present.size})</summary>
@@ -100,13 +119,39 @@ export default function Admin() {
             <input type="checkbox" style={{ width: 'auto' }} checked={present.has(m.id)} onChange={e => { const s = new Set(present); e.target.checked ? s.add(m.id) : s.delete(m.id); setPresent(s) }} />{m.name} <span className="mu">{m.asm}</span></label>)}</div></details>
         <button className="btn">Publish report</button></form>
       <h2>Add event</h2>
-      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" /><ProvSel /></div><button className="btn">Add event</button></form>
+      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" /><ProvSel /></div>
+        <label>Assemblies involved ({selAsm.size ? `${selAsm.size} selected` : 'none selected = all'})</label>
+        {assemblies.length ? <div style={{ maxHeight: 220, overflow: 'auto', margin: '6px 0 10px' }}>
+          <label style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}><input type="checkbox" style={{ width: 'auto' }} checked={selAsm.size === assemblies.length} onChange={e => setSelAsm(e.target.checked ? new Set(assemblies) : new Set())} /><b>Select all</b></label>
+          {assemblies.map(a => <label key={a} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
+            <input type="checkbox" style={{ width: 'auto' }} checked={selAsm.has(a)} onChange={e => { const s = new Set(selAsm); e.target.checked ? s.add(a) : s.delete(a); setSelAsm(s) }} />{a}</label>)}
+        </div> : <p className="mu">No assemblies for this province yet.</p>}
+        <button className="btn">Add event</button></form>
+      <h2>Events &amp; attendance</h2>
+      {events.map(ev => {
+        const ppl = invited(ev), n = s => ppl.filter(m => marks[m.id] === s).length
+        return <div className="card" key={ev.id} style={{ marginBottom: 12, borderTop: '5px solid var(--red)' }}>
+          <h3>{ev.title}</h3>
+          <div className="mu">{[ev.date, ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div>
+          <button className="btn g" onClick={() => openAtt(ev)}>{open === ev.id ? 'Close' : 'Mark attendance'}</button>
+          {open === ev.id && <>
+            <p><b>Present {n('Present')}</b> · Absent {n('Absent')} · Not marked {ppl.length - n('Present') - n('Absent')}</p>
+            <div style={{ overflowX: 'auto' }}><table><thead><tr><th>Name</th><th>Assembly</th><th>Attendance</th></tr></thead>
+              <tbody>{ppl.map(m => <tr key={m.id}><td>{m.name}</td><td>{m.asm}</td><td>
+                <select value={marks[m.id] || ''} onChange={e => setMarks({ ...marks, [m.id]: e.target.value })} style={{ width: 'auto' }}>
+                  <option value="">— Not marked —</option><option>Present</option><option>Absent</option></select></td></tr>)}</tbody></table></div>
+            {!ppl.length && <p className="mu">No congregants in the selected assemblies.</p>}
+            <button className="btn" onClick={() => saveAtt(ev)}>Save attendance</button>
+          </>}
+        </div>
+      })}
+      {!events.length && <p className="mu">No events yet.</p>}
       {me.role === 'super' && <>
         <h2>Meet the Team</h2>
         <form className="card" onSubmit={addTeam}><div className="form">
           <F l="Full name *" name="name" required />
           <F l="Role *" name="role" list="roles" required /><datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
-          <F l="Assembly" name="asm" />
+          <F l="Assembly" name="asm" list="asms" />
           <div><label>Province</label><select name="prov"><option></option>{PROV.map(p => <option key={p}>{p}</option>)}</select></div>
           <F l="Photo" name="photo" type="file" accept="image/*" />
         </div><button className="btn">Add team member</button></form>

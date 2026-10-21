@@ -1,5 +1,5 @@
 # D.M & W.O.G Church Portal (Next.js + Supabase)
-1. Create a free project at supabase.com. In the SQL editor run `supabase/schema.sql`, then `supabase/team-photos.sql` (storage for team photos).
+1. Create a free project at supabase.com. In the SQL editor run `supabase/schema.sql`, then `supabase/team-photos.sql` (storage for team photos) and `supabase/event-attendance.sql` (event assemblies + attendance).
 2. Authentication > Users: add yourself (email + password). Then run in SQL:
    `insert into staff(user_id,role) values ('YOUR-USER-UUID','super');`
    For a province admin: `insert into staff(user_id,role,province) values ('UUID','province','Hwedza');`
