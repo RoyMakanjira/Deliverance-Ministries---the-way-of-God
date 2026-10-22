@@ -4,6 +4,8 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import Congregants from '@/components/Congregants'
+import { FbButton } from '@/components/Facebook'
+import { FACEBOOK } from '@/lib/social'
 export const revalidate = 60
 export const dynamicParams = false
 export const generateStaticParams = () => Object.values(ASSEMBLIES).flat().map(a => ({ slug: slug(a) }))
@@ -25,7 +27,7 @@ export default async function Assembly({ params }) {
   const others = ASSEMBLIES[prov].filter(a => a !== asm)
   return (<>
     <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
-      <nav><Link href="/#assemblies">All assemblies</Link><a href="#leaders">Leaders</a><a href="#congregants">Congregants</a><Link href="/admin">Admin</Link></nav></header>
+      <nav><Link href="/#assemblies">All assemblies</Link><a href="#leaders">Leaders</a><a href="#congregants">Congregants</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
     <section className="hero small"><p>{prov}</p><h1>{asm}</h1><p>Assembly</p></section>
     <div className="wrap">
       <h2 id="leaders">Leaders</h2>
@@ -43,6 +45,7 @@ export default async function Assembly({ params }) {
       {others.length > 0 && <><h2>Other {prov} assemblies</h2>
         <div className="chips">{others.map(a => <Link key={a} href={`/assembly/${slug(a)}`}>{a}</Link>)}</div></>}
     </div>
-    <footer><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div><Link href="/">← Back to home</Link></div><div>© 2026 D.M & W.O.G</div></footer>
+    <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(28px,7vw,44px)', fontWeight: 800 }}>STAY CONNECTED</div><p>Follow us on Facebook for services, events and news.</p><FbButton /></div>
+    <footer style={{ marginTop: 0 }}><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div><Link href="/">← Back to home</Link></div><div><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook: @wogchurchint</a></div><div>© 2026 D.M & W.O.G</div></footer>
   </>)
 }

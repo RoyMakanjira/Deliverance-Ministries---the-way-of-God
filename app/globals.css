@@ -62,3 +62,4 @@ img{max-width:100%}
 .tabs button{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
 .tabs button.on{background:var(--red);border-color:var(--red);color:#fff}
 @media(max-width:800px){.give{grid-template-columns:1fr}.tabs button{flex:1 1 auto}}
+.btn.fb{background:#1877f2;color:#fff}.btn.fb:hover{background:#0f63d6}

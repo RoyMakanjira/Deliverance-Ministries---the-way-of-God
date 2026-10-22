@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
 import Give from '@/components/Give'
+import { FbButton } from '@/components/Facebook'
+import { FACEBOOK, WHATSAPP } from '@/lib/social'
 export const revalidate = 60
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
@@ -26,7 +28,7 @@ export default async function Home() {
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#give">Give</a><a href="#register">Register</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
     <section className="hero"><img src="/logo.png" alt="" width="130" style={{ background: '#fff', borderRadius: '50%' }} />
       <p>Welcome to</p><h1>Deliverance Ministries<br />& The Way of <span style={{ textTransform: 'none' }}>God</span></h1><p>Church International</p>
       <div><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#give">Give</a><a className="btn w" href="#reports">Latest Reports</a></div></section>
@@ -56,8 +58,8 @@ export default async function Home() {
       <Give how={how} />
       <h2 id="register">Join us / Register</h2><Register />
     </div>
-    <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp.</p>
-      <a className="btn w" href="https://wa.me/263789016651" target="_blank" rel="noopener noreferrer">Let's Talk Now</a></div>
-    <footer><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div>{Object.keys(ASSEMBLIES).join(' · ')}</div><div>© 2026 D.M & W.O.G</div></footer>
+    <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp, or follow us on Facebook for services, events and news.</p>
+      <a className="btn w" href={WHATSAPP} target="_blank" rel="noopener noreferrer">Let's Talk Now</a><FbButton /></div>
+    <footer><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div>{Object.keys(ASSEMBLIES).join(' · ')}</div><div><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook: @wogchurchint</a></div><div>© 2026 D.M & W.O.G</div></footer>
   </>)
 }
