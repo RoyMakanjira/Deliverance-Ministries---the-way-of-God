@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
+import { withDefaults } from '@/lib/content'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
@@ -17,7 +18,7 @@ export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
   const [q, setQ] = useState(''), [present, setPresent] = useState(new Set()), [msg, setMsg] = useState(''), [team, setTeam] = useState([])
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
-  const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false)
+  const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -25,6 +26,7 @@ export default function Admin() {
       setMe(s)
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
+      if (s?.role === 'super') setContent(withDefaults((await db.from('content').select('*')).data))
       if (s) setTeam(((await db.from('team').select('*').order('name')).data || []).filter(x => s.role === 'super' || x.prov === s.province))
     }
     setReady(true)
@@ -103,6 +105,24 @@ export default function Admin() {
     {editT.x.photo_url && <img src={editT.x.photo_url} alt="" style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 12 }} />}
     {teamFields(editT.x)}
     <button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button><button type="button" className="btn g" onClick={() => setEditT(null)}>Cancel</button></form>
+  // ---- website sections (About Us, ministries) ----
+  async function saveContent(e, s) {
+    e.preventDefault(); const f = new FormData(e.target), file = f.get('photo')
+    const o = { key: s.key, title: f.get('title'), body: f.get('body'), leader: f.get('leader') || null, updated_at: new Date().toISOString() }
+    if (f.get('noimg')) o.image_url = null
+    setBusy(true)
+    if (file && file.size) {
+      const path = `content/${s.key}-${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`
+      const { error } = await db.storage.from('team').upload(path, file)
+      if (error) { setBusy(false); return setMsg(`Picture upload failed: ${error.message}`) }
+      o.image_url = db.storage.from('team').getPublicUrl(path).data.publicUrl
+    }
+    const { error } = await db.from('content').upsert(o)
+    setBusy(false)
+    if (error) return setMsg(error.message.includes('content') ? 'Run supabase/site-content.sql in Supabase first, then try again.' : error.message)
+    if (o.image_url !== undefined && photoPath(s.image_url)) await db.storage.from('team').remove([photoPath(s.image_url)])
+    setMsg(`${o.title} saved — the website updates within a minute`); load()
+  }
   // ---- reports / events ----
   async function addReport(e) {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); const p = prov || o.prov
@@ -148,6 +168,20 @@ export default function Admin() {
       <datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
       <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button> <b>{msg}</b></p>
       <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
+
+      {me.role === 'super' && <>
+        <h2>Website content</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us and ministry sections on the homepage. Leave a blank line between paragraphs.</p>
+        {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>
+          <form onSubmit={e => saveContent(e, s)}>
+            <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{s.key !== 'about' && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
+              <F l={s.image_url ? 'Replace picture' : 'Picture (optional)'} name="photo" type="file" accept="image/*" /></div>
+            {s.image_url && <label style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--tx)', marginBottom: 10 }}><img src={s.image_url} alt="" style={{ width: 90, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+              <input type="checkbox" name="noimg" style={{ width: 'auto' }} /> Remove picture</label>}
+            <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
+            <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
+          </form></details>)}
+      </>}
 
       <h2>Manage an assembly</h2>
       <div className="card"><label>Choose an assembly</label>

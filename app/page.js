@@ -3,16 +3,20 @@ import Register from '@/components/Register'
 import Person from '@/components/Person'
 import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
+import { withDefaults } from '@/lib/content'
 export const revalidate = 60
+const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
 const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
 export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
-  const [r, e, t] = await Promise.all([
+  const [r, e, t, c] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
     db.from('events').select('*').gte('date', today).order('date'),
     db.from('team').select('*').order('name'),
+    db.from('content').select('*'),
   ])
+  const [about, ...ministries] = withDefaults(c.data)
   const reports = r.data || [], events = e.data || [], team = t.data || []
   const b = reports.filter(x => x.women != null)
   const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0)
@@ -20,12 +24,17 @@ export default async function Home() {
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#register">Register</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#register">Register</a><a href="/admin">Admin</a></nav></header>
     <section className="hero"><img src="/logo.png" alt="" width="130" style={{ background: '#fff', borderRadius: '50%' }} />
       <p>Welcome to</p><h1>Deliverance Ministries<br />& The Way of <span style={{ textTransform: 'none' }}>God</span></h1><p>Church International</p>
       <div><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#reports">Latest Reports</a></div></section>
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
+      <h2 id="about">{about.title}</h2>
+      <div className={`about${about.image_url ? '' : ' solo'}`}>{about.image_url && <img src={about.image_url} alt="" />}<div><Paras t={about.body} /></div></div>
+      <h2 id="ministries">Our Ministries</h2>
+      <div className="grid">{ministries.map(m => <div className="card ministry" key={m.key}>{m.image_url && <img src={m.image_url} alt="" />}
+        <h3>{m.title}</h3>{m.leader && <div className="mu">Led by {m.leader}</div>}<Paras t={m.body} /></div>)}</div>
       <h2 id="assemblies">Our Assemblies</h2>
       <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
         <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
