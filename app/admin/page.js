@@ -194,7 +194,7 @@ export default function Admin() {
             <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{MINISTRIES.includes(s.key) && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
               {s.key !== 'giving' && <F l={s.image_url ? 'Replace picture' : 'Picture (optional)'} name="photo" type="file" accept="image/*" />}</div>
             {s.image_url && <label style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--tx)', marginBottom: 10 }}><img src={s.image_url} alt="" style={{ width: 90, height: 60, objectFit: 'cover', borderRadius: 8 }} />
-              <input type="checkbox" name="noimg" style={{ width: 'auto' }} /> Remove picture</label>}
+              <input type="checkbox" name="noimg" style={{ width: 'auto' }} /> {MINISTRIES.includes(s.key) ? 'Go back to the default picture' : 'Remove picture'}</label>}
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
