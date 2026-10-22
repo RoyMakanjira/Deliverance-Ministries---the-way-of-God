@@ -57,3 +57,8 @@ img{max-width:100%}
 .ministry{padding:0;overflow:hidden;border-top:5px solid var(--red)}.ministry>*:not(img){margin-left:16px;margin-right:16px}.ministry h3{margin-top:14px}
 .ministry img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
 @media(max-width:700px){.about{grid-template-columns:1fr;font-size:16px}}
+.give{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.tabs button{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+.tabs button.on{background:var(--red);border-color:var(--red);color:#fff}
+@media(max-width:800px){.give{grid-template-columns:1fr}.tabs button{flex:1 1 auto}}

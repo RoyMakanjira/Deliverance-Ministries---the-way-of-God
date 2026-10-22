@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
-import { ASSEMBLIES, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
+import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
-import { withDefaults } from '@/lib/content'
+import { withDefaults, MINISTRIES } from '@/lib/content'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
@@ -19,6 +19,7 @@ export default function Admin() {
   const [q, setQ] = useState(''), [present, setPresent] = useState(new Set()), [msg, setMsg] = useState(''), [team, setTeam] = useState([])
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
+  const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -26,6 +27,7 @@ export default function Admin() {
       setMe(s)
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
+      if (s) setGifts((await db.from('giving').select('*').order('created_at', { ascending: false })).data || [])
       if (s?.role === 'super') setContent(withDefaults((await db.from('content').select('*')).data))
       if (s) setTeam(((await db.from('team').select('*').order('name')).data || []).filter(x => s.role === 'super' || x.prov === s.province))
     }
@@ -123,6 +125,21 @@ export default function Admin() {
     if (o.image_url !== undefined && photoPath(s.image_url)) await db.storage.from('team').remove([photoPath(s.image_url)])
     setMsg(`${o.title} saved — the website updates within a minute`); load()
   }
+  // ---- giving (tithes, donations, pledges) ----
+  async function setGiftStatus(g, status) {
+    const { error } = await db.from('giving').update({ status }).eq('id', g.id)
+    if (error) return setMsg(error.message)
+    setGifts(gifts.map(x => x.id === g.id ? { ...x, status } : x))
+  }
+  async function delGift(g) { if (confirm(`Delete this ${g.kind.toLowerCase()} from ${g.name}?`)) { await db.from('giving').delete().eq('id', g.id); load() } }
+  async function addGift(e) {
+    e.preventDefault(); const v = Object.fromEntries(new FormData(e.target))
+    const o = { kind: v.kind, name: v.name, phone: v.phone || null, who: 'Member', dest: v.dest, prov: provOf(v.dest) || null, amount: +v.amount, currency: v.currency, method: v.method || null, ref: v.ref || null, note: v.note || null }
+    const { data, error } = await db.from('giving').insert(o).select().single()
+    if (error) return setMsg(error.message.includes('giving') ? 'Run supabase/giving.sql in Supabase first, then try again.' : error.message)
+    if (v.status !== 'Pending') await db.from('giving').update({ status: v.status }).eq('id', data.id)
+    e.target.reset(); setMsg('Giving recorded'); load()
+  }
   // ---- reports / events ----
   async function addReport(e) {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); const p = prov || o.prov
@@ -171,17 +188,49 @@ export default function Admin() {
 
       {me.role === 'super' && <>
         <h2>Website content</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us and ministry sections on the homepage. Leave a blank line between paragraphs.</p>
+        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”.</p>
         {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>
           <form onSubmit={e => saveContent(e, s)}>
-            <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{s.key !== 'about' && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
-              <F l={s.image_url ? 'Replace picture' : 'Picture (optional)'} name="photo" type="file" accept="image/*" /></div>
+            <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{MINISTRIES.includes(s.key) && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
+              {s.key !== 'giving' && <F l={s.image_url ? 'Replace picture' : 'Picture (optional)'} name="photo" type="file" accept="image/*" />}</div>
             {s.image_url && <label style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--tx)', marginBottom: 10 }}><img src={s.image_url} alt="" style={{ width: 90, height: 60, objectFit: 'cover', borderRadius: 8 }} />
               <input type="checkbox" name="noimg" style={{ width: 'auto' }} /> Remove picture</label>}
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
       </>}
+
+      <h2>Giving</h2>
+      {(() => {
+        const dests = prov ? ASSEMBLIES[prov] : [BISHOP, ...Object.values(ASSEMBLIES).flat()]
+        const rows = gifts.filter(g => (!gf.kind || g.kind === gf.kind) && (!gf.dest || g.dest === gf.dest) && (!gf.status || g.status === gf.status))
+        const tot = {}; rows.filter(g => g.status === 'Received' || g.status === 'Fulfilled').forEach(g => { tot[g.currency] = (tot[g.currency] || 0) + +g.amount })
+        const owed = {}; rows.filter(g => g.kind === 'Pledge' && g.status === 'Pending').forEach(g => { owed[g.currency] = (owed[g.currency] || 0) + +g.amount })
+        const fmt = o => Object.entries(o).map(([c, n]) => `${c} ${n.toFixed(2)}`).join(' · ') || '0'
+        const sel = (k, opts, all) => <select value={gf[k]} onChange={e => setGf({ ...gf, [k]: e.target.value })}><option value="">{all}</option>{opts.map(o => <option key={o}>{o}</option>)}</select>
+        return <>
+          <div className="form">{sel('kind', ['Tithe', 'Donation', 'Pledge'], 'All types')}{sel('dest', dests, prov ? `All ${prov} assemblies` : 'All destinations')}{sel('status', ['Pending', 'Received', 'Fulfilled', 'Cancelled'], 'Any status')}</div>
+          <div className="grid stats"><div className="stat"><b>{rows.length}</b>Entries</div><div className="stat"><b style={{ fontSize: 20 }}>{fmt(tot)}</b>Received</div><div className="stat"><b style={{ fontSize: 20 }}>{fmt(owed)}</b>Pledged, not yet paid</div></div>
+          <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Phone</th><th>To</th><th>Amount</th><th>Method / ref</th><th>Status</th><th></th></tr></thead>
+            <tbody>{rows.map(g => <tr key={g.id}><td>{g.created_at?.slice(0, 10)}</td><td>{g.kind}{g.due && <div className="mu">due {g.due}</div>}</td><td>{g.name}<div className="mu">{g.who}</div></td>
+              <td>{g.phone ? <a href={`tel:${g.phone}`}>{g.phone}</a> : '—'}</td><td>{g.dest}</td><td><b>{g.currency} {(+g.amount).toFixed(2)}</b></td>
+              <td>{[g.method, g.ref].filter(Boolean).join(' · ') || '—'}{g.note && <div className="mu" style={{ whiteSpace: 'normal', maxWidth: 220 }}>{g.note}</div>}</td>
+              <td><select value={g.status} onChange={e => setGiftStatus(g, e.target.value)} style={{ width: 'auto' }}>{['Pending', 'Received', 'Fulfilled', 'Cancelled'].map(s => <option key={s}>{s}</option>)}</select></td>
+              <td>{me.role === 'super' && <button className="btn g" onClick={() => delGift(g)}>Delete</button>}</td></tr>)}</tbody></table>
+            {!rows.length && <p className="mu">No giving recorded yet.</p>}</div>
+          <details className="card" style={{ marginTop: 12 }}><summary><b>+ Record giving received at church (e.g. cash)</b></summary>
+            <form onSubmit={addGift}><div className="form">
+              <div><label>Type</label><select name="kind"><option>Tithe</option><option>Donation</option><option>Pledge</option></select></div>
+              <div><label>To *</label><select name="dest" required>{dests.map(d => <option key={d}>{d}</option>)}</select></div>
+              <F l="Name *" name="name" required /><F l="Phone" name="phone" />
+              <div><label>Currency</label><select name="currency"><option>USD</option><option>ZiG</option><option>MZN</option><option>ZAR</option></select></div>
+              <F l="Amount *" name="amount" type="number" min="0.01" step="0.01" required />
+              <div><label>Method</label><select name="method"><option>Cash</option><option>EcoCash</option><option>InnBucks</option><option>OneMoney</option><option>M-Pesa</option><option>Bank transfer</option></select></div>
+              <F l="Reference" name="ref" /><F l="Note" name="note" />
+              <div><label>Status</label><select name="status" defaultValue="Received"><option>Received</option><option>Pending</option><option>Fulfilled</option></select></div>
+            </div><button className="btn">Save</button></form></details>
+        </>
+      })()}
 
       <h2>Manage an assembly</h2>
       <div className="card"><label>Choose an assembly</label>

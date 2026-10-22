@@ -3,7 +3,8 @@ import Register from '@/components/Register'
 import Person from '@/components/Person'
 import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
-import { withDefaults } from '@/lib/content'
+import { withDefaults, MINISTRIES } from '@/lib/content'
+import Give from '@/components/Give'
 export const revalidate = 60
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
@@ -16,7 +17,8 @@ export default async function Home() {
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
   ])
-  const [about, ...ministries] = withDefaults(c.data)
+  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving')
+  const ministries = sections.filter(s => MINISTRIES.includes(s.key))
   const reports = r.data || [], events = e.data || [], team = t.data || []
   const b = reports.filter(x => x.women != null)
   const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0)
@@ -24,10 +26,10 @@ export default async function Home() {
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#register">Register</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#give">Give</a><a href="#register">Register</a><a href="/admin">Admin</a></nav></header>
     <section className="hero"><img src="/logo.png" alt="" width="130" style={{ background: '#fff', borderRadius: '50%' }} />
       <p>Welcome to</p><h1>Deliverance Ministries<br />& The Way of <span style={{ textTransform: 'none' }}>God</span></h1><p>Church International</p>
-      <div><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#reports">Latest Reports</a></div></section>
+      <div><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#give">Give</a><a className="btn w" href="#reports">Latest Reports</a></div></section>
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
       <h2 id="about">{about.title}</h2>
@@ -49,6 +51,9 @@ export default async function Home() {
       <h2 id="team">Meet the Team</h2>
       {top.length > 0 && <div className="grid people">{top.map(x => <Person key={x.id} x={x} />)}</div>}
       {pastors.length > 0 && <><h3 style={{ margin: '28px 0 12px' }}>Assembly Pastors</h3><div className="grid people">{pastors.map(x => <Person key={x.id} x={x} />)}</div></>}
+      <h2 id="give">Tithes, Donations &amp; Pledges</h2>
+      <p className="mu" style={{ textAlign: 'center', maxWidth: 640, margin: '-10px auto 20px' }}>“Bring ye all the tithes into the storehouse…” — Malachi 3:10. Choose what you are giving and where it should go: the Bishop’s Wallet or any assembly.</p>
+      <Give how={how} />
       <h2 id="register">Join us / Register</h2><Register />
     </div>
     <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp.</p>
