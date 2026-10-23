@@ -63,3 +63,34 @@ img{max-width:100%}
 .tabs button.on{background:var(--red);border-color:var(--red);color:#fff}
 @media(max-width:800px){.give{grid-template-columns:1fr}.tabs button{flex:1 1 auto}}
 .btn.fb{background:#1877f2;color:#fff}.btn.fb:hover{background:#0f63d6}
+/* ---- animated welcome banner ---- */
+.hero-magic{position:relative;overflow:hidden;isolation:isolate;background:#141b6e}
+.hero-bg{position:absolute;inset:-4%;z-index:-3;background:linear-gradient(rgba(20,27,110,.82),rgba(160,20,32,.62)),url(/hero.jpg) center/cover;animation:hero-zoom 26s ease-in-out infinite alternate}
+.hero-rays{position:absolute;left:50%;top:38%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;z-index:-2;opacity:.16;
+  background:repeating-conic-gradient(from 0deg,#fff 0deg 4deg,transparent 4deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 55%);mask:radial-gradient(circle,#000 0,transparent 55%);animation:hero-spin 90s linear infinite}
+.hero-sparks{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.hero-sparks span{position:absolute;bottom:-12px;border-radius:50%;background:#ffe9a8;box-shadow:0 0 10px 3px rgba(255,214,120,.7);opacity:0;animation:hero-rise linear infinite}
+.hero-logo{position:relative;animation:hero-float 6s ease-in-out infinite,hero-pop 1s cubic-bezier(.2,.9,.3,1.3) both}
+.hero-logo::before{content:'';position:absolute;inset:-16px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,150,.75),rgba(255,226,150,0) 70%);animation:hero-halo 3.5s ease-in-out infinite;z-index:-1}
+.hero-logo img{display:block;background:#fff;border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.18),0 12px 40px rgba(0,0,0,.35)}
+.hero-welcome{display:inline-block;text-transform:uppercase;letter-spacing:.35em;font-size:14px;font-weight:600;animation:hero-track 2.4s cubic-bezier(.2,.8,.2,1) both .3s}
+.hero-line{display:block}
+.hero-word{display:inline-block;margin:0 .12em;opacity:0;animation:hero-word .9s cubic-bezier(.2,.8,.2,1) forwards;text-shadow:0 4px 30px rgba(0,0,0,.3)}
+.hero-god{text-transform:none;background:linear-gradient(100deg,#ffd27a 20%,#fff 40%,#ffd27a 60%,#f5a623 80%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;
+  filter:drop-shadow(0 0 18px rgba(255,210,122,.55));animation:hero-word .9s cubic-bezier(.2,.8,.2,1) forwards,hero-shine 4s linear infinite 2s}
+.hero-in{opacity:0;animation:hero-fade 1s ease-out forwards}
+.hero-scroll{position:absolute;bottom:22px;left:50%;margin-left:-13px;width:26px;height:42px;border:2px solid rgba(255,255,255,.7);border-radius:14px}
+.hero-scroll span{position:absolute;left:50%;top:8px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff;animation:hero-wheel 1.8s ease-in-out infinite}
+@keyframes hero-zoom{from{transform:scale(1)}to{transform:scale(1.12) translate(-1.5%,-1%)}}
+@keyframes hero-spin{to{transform:rotate(360deg)}}
+@keyframes hero-rise{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.9}50%{transform:translateY(-45vh) translateX(18px)}90%{opacity:.7}100%{transform:translateY(-95vh) translateX(-12px);opacity:0}}
+@keyframes hero-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes hero-pop{from{opacity:0;scale:.6}to{opacity:1;scale:1}}
+@keyframes hero-halo{0%,100%{opacity:.45;transform:scale(.95)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes hero-track{from{opacity:0;letter-spacing:1em;filter:blur(6px)}to{opacity:1;letter-spacing:.35em;filter:blur(0)}}
+@keyframes hero-word{from{opacity:0;transform:translateY(40px) rotateX(60deg);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes hero-shine{to{background-position:-250% 0}}
+@keyframes hero-fade{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes hero-wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(14px)}}
+@media(max-width:700px){.hero-logo img{width:96px;height:96px}.hero-welcome{font-size:12px}.hero-scroll{display:none}}
+@media(prefers-reduced-motion:reduce){.hero-magic *,.hero-magic *::before{animation:none!important}.hero-word,.hero-in{opacity:1}.hero-sparks,.hero-rays{display:none}}

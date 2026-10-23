@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
 import Give from '@/components/Give'
+import Hero from '@/components/Hero'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK, WHATSAPP } from '@/lib/social'
 export const revalidate = 60
@@ -29,9 +30,7 @@ export default async function Home() {
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
       <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
-    <section className="hero"><img src="/logo.png" alt="" width="130" style={{ background: '#fff', borderRadius: '50%' }} />
-      <p>Welcome to</p><h1>Deliverance Ministries<br />& The Way of <span style={{ textTransform: 'none' }}>God</span></h1><p>Church International</p>
-      <div><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#give">Give</a><a className="btn w" href="#reports">Latest Reports</a></div></section>
+    <Hero />
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
       <h2 id="about">{about.title}</h2>
