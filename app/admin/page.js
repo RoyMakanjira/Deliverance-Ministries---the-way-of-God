@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
-import { withDefaults, MINISTRIES } from '@/lib/content'
+import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
@@ -111,7 +111,8 @@ export default function Admin() {
   async function saveContent(e, s) {
     e.preventDefault(); const f = new FormData(e.target), file = f.get('photo')
     const o = { key: s.key, title: f.get('title'), body: f.get('body'), leader: f.get('leader') || null, updated_at: new Date().toISOString() }
-    if (f.get('noimg')) o.image_url = null
+    if (f.get('pic') === 'none') o.image_url = NO_PIC
+    if (f.get('pic') === 'default') o.image_url = null
     setBusy(true)
     if (file && file.size) {
       const path = `content/${s.key}-${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`
@@ -188,13 +189,16 @@ export default function Admin() {
 
       {me.role === 'super' && <>
         <h2>Website content</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”.</p>
+        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry (Men’s, Women’s, Youth, Children’s) and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”.</p>
         {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>
           <form onSubmit={e => saveContent(e, s)}>
             <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{MINISTRIES.includes(s.key) && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
-              {s.key !== 'giving' && <F l={s.image_url ? 'Replace picture' : 'Picture (optional)'} name="photo" type="file" accept="image/*" />}</div>
-            {s.image_url && <label style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--tx)', marginBottom: 10 }}><img src={s.image_url} alt="" style={{ width: 90, height: 60, objectFit: 'cover', borderRadius: 8 }} />
-              <input type="checkbox" name="noimg" style={{ width: 'auto' }} /> {MINISTRIES.includes(s.key) ? 'Go back to the default picture' : 'Remove picture'}</label>}
+              {s.key !== 'giving' && <F l={s.image_url ? 'Upload a new picture' : 'Upload a picture (optional)'} name="photo" type="file" accept="image/*" />}
+              {s.key !== 'giving' && <div><label>Picture</label><select name="pic" defaultValue="keep">
+                <option value="keep">{s.image_url ? 'Keep the current picture' : 'No picture (keep it that way)'}</option>
+                {defaultPic(s.key) && s.image_url !== defaultPic(s.key) && <option value="default">Use the default illustration</option>}
+                {s.image_url && <option value="none">Remove the picture — show no picture</option>}</select></div>}</div>
+            {s.key !== 'giving' && <div style={{ marginBottom: 10 }}>{s.image_url ? <img src={s.image_url} alt="" style={{ width: 120, height: 75, objectFit: 'cover', borderRadius: 8 }} /> : <span className="mu">Currently showing no picture.</span>}</div>}
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
