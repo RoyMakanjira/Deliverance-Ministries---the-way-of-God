@@ -21,6 +21,7 @@ export default function Admin() {
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
+  const [notes, setNotes] = useState([]), [nf, setNf] = useState({ ministry: '', status: '' })
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -29,6 +30,7 @@ export default function Admin() {
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
       if (s) setGifts((await db.from('giving').select('*').order('created_at', { ascending: false })).data || [])
+      if (s?.role === 'super') setNotes((await db.from('feedback').select('*').order('created_at', { ascending: false })).data || [])
       if (s?.role === 'super') setContent(withDefaults((await db.from('content').select('*')).data))
       if (s) setTeam(((await db.from('team').select('*').order('name')).data || []).filter(x => s.role === 'super' || x.prov === s.province))
     }
@@ -142,6 +144,13 @@ export default function Admin() {
     if (v.status !== 'Pending') await db.from('giving').update({ status: v.status }).eq('id', data.id)
     e.target.reset(); setMsg('Giving recorded'); load()
   }
+  // ---- anonymous messages from the ministry pages ----
+  async function setNoteStatus(n, status) {
+    const { error } = await db.from('feedback').update({ status }).eq('id', n.id)
+    if (error) return setMsg(error.message)
+    setNotes(notes.map(x => x.id === n.id ? { ...x, status } : x))
+  }
+  async function delNote(n) { if (confirm('Delete this message?')) { await db.from('feedback').delete().eq('id', n.id); setNotes(notes.filter(x => x.id !== n.id)) } }
   // ---- reports / events ----
   async function addReport(e) {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); const p = prov || o.prov
@@ -248,6 +257,27 @@ export default function Admin() {
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
+      </>}
+
+      {me.role === 'super' && <>
+        <h2>Anonymous messages</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Sent from the Men's, Women's and Youth ministry pages. The sender's name is never collected.</p>
+        {(() => {
+          const MIN = { men: "Men's", women: "Women's", youth: 'Youth' }, ST = ['New', 'Read', 'Being handled', 'Resolved']
+          const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
+          return <>
+            <div className="grid stats">{[['New', notes.filter(n => n.status === 'New').length], ['Being handled', notes.filter(n => n.status === 'Being handled').length], ['Resolved', notes.filter(n => n.status === 'Resolved').length]].map(([l, c]) => <div className="stat" key={l}><b>{c}</b>{l}</div>)}</div>
+            <div className="form"><select value={nf.ministry} onChange={e => setNf({ ...nf, ministry: e.target.value })}><option value="">All ministries</option>{Object.entries(MIN).map(([k, v]) => <option key={k} value={k}>{v} Ministry</option>)}</select>
+              <select value={nf.status} onChange={e => setNf({ ...nf, status: e.target.value })}><option value="">Any status</option>{ST.map(x => <option key={x}>{x}</option>)}</select></div>
+            {rows.map(n => <div key={n.id} className="card" style={{ marginBottom: 10, borderLeft: `5px solid ${n.status === 'New' ? 'var(--red)' : n.status === 'Resolved' ? '#2e9d5b' : 'var(--btn)'}` }}>
+              <div className="mu">{new Date(n.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} · <b>{MIN[n.ministry]} Ministry</b>{n.topic && ` · ${n.topic}`}{n.asm && ` · ${n.asm}`}</div>
+              <p style={{ whiteSpace: 'pre-wrap', margin: '8px 0' }}>{n.message}</p>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><select value={n.status} onChange={e => setNoteStatus(n, e.target.value)} style={{ width: 'auto' }}>{ST.map(x => <option key={x}>{x}</option>)}</select>
+                <button className="btn g" onClick={() => delNote(n)}>Delete</button></div>
+            </div>)}
+            {!rows.length && <p className="mu">No messages yet.</p>}
+          </>
+        })()}
       </>}
 
       <h2>Giving</h2>

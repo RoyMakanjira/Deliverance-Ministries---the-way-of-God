@@ -38,8 +38,9 @@ export default async function Home() {
       <h2 id="about">{about.title}</h2>
       <div className={`about${about.image_url ? '' : ' solo'}`}>{about.image_url && <img src={about.image_url} alt="" />}<div><Paras t={about.body} /></div></div>
       <h2 id="ministries">Our Ministries</h2>
-      <div className="grid">{ministries.map(m => <div className="card ministry" key={m.key}>{m.image_url && <img src={m.image_url} alt="" />}
-        <h3>{m.title}</h3>{m.leader && <div className="mu">Led by {m.leader}</div>}<Paras t={m.body} /></div>)}</div>
+      <div className="grid">{ministries.map(m => <Link href={`/ministry/${m.key}`} className="card ministry" key={m.key}>{m.image_url && <img src={m.image_url} alt="" />}
+        <h3>{m.title}</h3>{m.leader && <div className="mu">Led by {m.leader}</div>}<Paras t={m.body} />
+        <span className="more">{m.key === 'children' ? 'Open page →' : 'Open page & send an anonymous message →'}</span></Link>)}</div>
       <h2 id="assemblies">Our Assemblies</h2>
       <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
         <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
