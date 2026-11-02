@@ -153,7 +153,8 @@ export default function Admin() {
   }
   // poster / video for an event, stored in the public 'team' bucket under events/
   async function uploadMedia(file) {
-    const path = `events/${Date.now()}-${file.name.replace(/[^w.-]/g, '_')}`
+    const ext = (file.name.match(/.([a-z0-9]{2,5})$/i)?.[1] || file.type.split('/')[1] || 'bin').toLowerCase()
+    const path = `events/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
     const { error } = await db.storage.from('team').upload(path, file, { contentType: file.type })
     if (error) throw new Error(error.message.includes('size') ? 'That file is too big. Try a shorter or smaller video (under 50 MB).' : `Upload failed: ${error.message}`)
     return { media_url: db.storage.from('team').getPublicUrl(path).data.publicUrl, media_type: file.type.startsWith('video') ? 'video' : 'image' }
@@ -163,10 +164,13 @@ export default function Admin() {
     e.preventDefault(); const f = new FormData(e.target), file = f.get('media'); f.delete('media')
     const o = Object.fromEntries(f); o.prov = prov || o.prov; o.asms = [...selAsm]
     setBusy(true)
-    try { if (file && file.size) Object.assign(o, await uploadMedia(file)) } catch (err) { setBusy(false); return setMsg(err.message) }
+    try { if (file && file.size) Object.assign(o, await uploadMedia(file)) } catch (err) { setBusy(false); alert(err.message); return setMsg(err.message) }
     const { error } = await db.from('events').insert(o)
     setBusy(false)
-    if (error) return setMsg(mediaErr(error.message))
+    if (error) {
+      if (photoPath(o.media_url)) await db.storage.from('team').remove([photoPath(o.media_url)])
+      const m = mediaErr(error.message); alert(m); return setMsg(m)
+    }
     e.target.reset(); setSelAsm(new Set()); setMsg('Event added'); load()
   }
   async function setEventMedia(ev, file) {
@@ -175,10 +179,10 @@ export default function Admin() {
     try {
       const m = await uploadMedia(file)
       const { error } = await db.from('events').update(m).eq('id', ev.id)
-      if (error) throw new Error(mediaErr(error.message))
+      if (error) { await db.storage.from('team').remove([photoPath(m.media_url)]); throw new Error(mediaErr(error.message)) }
       if (photoPath(ev.media_url)) await db.storage.from('team').remove([photoPath(ev.media_url)])
       setMsg(`${m.media_type === 'video' ? 'Video' : 'Poster'} added to ${ev.title}`); load()
-    } catch (err) { setMsg(err.message) }
+    } catch (err) { alert(err.message); setMsg(err.message) }
     setBusy(false)
   }
   async function removeEventMedia(ev) {
