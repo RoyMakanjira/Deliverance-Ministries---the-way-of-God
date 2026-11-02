@@ -5,6 +5,7 @@ import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import Congregants from '@/components/Congregants'
 import EventCard from '@/components/EventCard'
+import { since, upcoming } from '@/lib/dates'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
 export const revalidate = 60
@@ -20,11 +21,11 @@ export default async function Assembly({ params }) {
   const [t, r, e] = await Promise.all([
     db.from('team').select('*').order('name'),
     db.from('reports').select('*').eq('prov', prov).order('date', { ascending: false }).limit(50),
-    db.from('events').select('*').gte('date', today).order('date'),
+    db.from('events').select('*').gte('date', since(today)).order('date'),
   ])
   const leaders = (t.data || []).filter(x => sameAsm(x.asm, asm)).sort((a, c) => oi(a.role) - oi(c.role))
   const reports = (r.data || []).filter(x => sameAsm(x.asm, asm)).slice(0, 6)
-  const events = (e.data || []).filter(x => x.asms?.length ? x.asms.some(a => sameAsm(a, asm)) : !x.prov || x.prov === prov)
+  const events = upcoming(e.data, today).filter(x => x.asms?.length ? x.asms.some(a => sameAsm(a, asm)) : !x.prov || x.prov === prov)
   const others = ASSEMBLIES[prov].filter(a => a !== asm)
   return (<>
     <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>

@@ -2,6 +2,7 @@ import { supabase as db } from '@/lib/supabase'
 import Register from '@/components/Register'
 import TeamMarquee from '@/components/TeamMarquee'
 import EventCard from '@/components/EventCard'
+import { since, upcoming } from '@/lib/dates'
 import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
@@ -17,13 +18,13 @@ export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
   const [r, e, t, c] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
-    db.from('events').select('*').gte('date', today).order('date'),
+    db.from('events').select('*').gte('date', since(today)).order('date'),
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
   ])
   const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
-  const reports = r.data || [], events = e.data || [], team = t.data || []
+  const reports = r.data || [], events = upcoming(e.data, today), team = t.data || []
   const b = reports.filter(x => x.women != null)
   const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0)
   const top = team.filter(x => x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))

@@ -4,6 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
+import { eventDates } from '@/lib/dates'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
@@ -159,10 +160,12 @@ export default function Admin() {
     if (error) throw new Error(error.message.includes('size') ? 'That file is too big. Try a shorter or smaller video (under 50 MB).' : `Upload failed: ${error.message}`)
     return { media_url: db.storage.from('team').getPublicUrl(path).data.publicUrl, media_type: file.type.startsWith('video') ? 'video' : 'image' }
   }
-  const mediaErr = m => m.includes('media_') ? 'Run supabase/event-media.sql in Supabase first, then try again.' : m
+  const mediaErr = m => m.includes('media_') || m.includes('end_date') ? 'Supabase needs a one-time update first: run supabase/event-media.sql and supabase/event-dates.sql in the Supabase SQL Editor, then try again.' : m
   async function addEvent(e) {
     e.preventDefault(); const f = new FormData(e.target), file = f.get('media'); f.delete('media')
     const o = Object.fromEntries(f); o.prov = prov || o.prov; o.asms = [...selAsm]
+    if (!o.end_date || o.end_date === o.date) delete o.end_date
+    else if (o.end_date < o.date) { alert('The "To" date must be on or after the "From" date.'); return }
     setBusy(true)
     try { if (file && file.size) Object.assign(o, await uploadMedia(file)) } catch (err) { setBusy(false); alert(err.message); return setMsg(err.message) }
     const { error } = await db.from('events').insert(o)
@@ -318,7 +321,7 @@ export default function Admin() {
             <input type="checkbox" style={{ width: 'auto' }} checked={present.has(m.id)} onChange={e => { const s = new Set(present); e.target.checked ? s.add(m.id) : s.delete(m.id); setPresent(s) }} />{m.name} <span className="mu">{m.asm}</span></label>)}</div></details>
         <button className="btn">Publish report</button></form>
       <h2>Add event</h2>
-      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}<F l="Poster or video (optional)" name="media" type="file" accept="image/*,video/*" /></div>
+      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="From date *" name="date" type="date" required /><F l="To date (if more than one day)" name="end_date" type="date" /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}<F l="Poster or video (optional)" name="media" type="file" accept="image/*,video/*" /></div>
         <label>Assemblies involved ({selAsm.size ? `${selAsm.size} selected` : 'none selected = all'})</label>
         {assemblies.length ? <div style={{ maxHeight: 220, overflow: 'auto', margin: '6px 0 10px' }}>
           <label style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}><input type="checkbox" style={{ width: 'auto' }} checked={selAsm.size === assemblies.length} onChange={e => setSelAsm(e.target.checked ? new Set(assemblies) : new Set())} /><b>Select all</b></label>
@@ -334,7 +337,7 @@ export default function Admin() {
             {ev.media_url && (ev.media_type === 'video' ? <video src={ev.media_url} controls preload="metadata" style={{ width: 200, borderRadius: 8, background: '#000' }} />
               : <img src={ev.media_url} alt="" style={{ width: 120, maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />)}
             <div style={{ flex: 1, minWidth: 200 }}><h3>{ev.title}</h3>
-              <div className="mu">{[ev.date, ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div></div>
+              <div className="mu">{[eventDates(ev), ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div></div>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: 6 }}>
             <button className="btn g" onClick={() => openAtt(ev)}>{open === ev.id ? 'Close' : 'Mark attendance'}</button>
