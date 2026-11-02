@@ -1,6 +1,6 @@
 import { supabase as db } from '@/lib/supabase'
 import Register from '@/components/Register'
-import Person from '@/components/Person'
+import TeamMarquee from '@/components/TeamMarquee'
 import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
@@ -50,8 +50,8 @@ export default async function Home() {
       <div className="grid">{events.map(x => <div className="card" key={x.id} style={{ borderTop: '5px solid var(--red)' }}><h3>{x.title}</h3><div className="mu">{x.date} {x.time} {x.venue && `· ${x.venue}`} {x.prov && `· ${x.prov}`}</div>{x.asms?.length > 0 && <div className="mu">Assemblies: {x.asms.join(', ')}</div>}</div>)}
         {!events.length && <p className="mu">No upcoming events.</p>}</div>
       <h2 id="team">Meet the Team</h2>
-      {top.length > 0 && <div className="grid people">{top.map(x => <Person key={x.id} x={x} />)}</div>}
-      {pastors.length > 0 && <><h3 style={{ margin: '28px 0 12px' }}>Assembly Pastors</h3><div className="grid people">{pastors.map(x => <Person key={x.id} x={x} />)}</div></>}
+      {top.length > 0 && <TeamMarquee people={top} />}
+      {pastors.length > 0 && <><h3 style={{ margin: '28px 0 12px' }}>Assembly Pastors</h3><TeamMarquee people={pastors} /></>}
       <h2 id="give">Tithes, Donations &amp; Pledges</h2>
       <p className="mu" style={{ textAlign: 'center', maxWidth: 640, margin: '-10px auto 20px' }}>“Bring ye all the tithes into the storehouse…” — Malachi 3:10. Choose what you are giving and where it should go: the Bishop’s Wallet or any assembly.</p>
       <Give how={how} />
