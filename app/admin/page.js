@@ -151,11 +151,50 @@ export default function Admin() {
     if (ms.length) await db.from('attendance').insert(ms.map(m => ({ report_id: data.id, member_id: m.id })))
     setPresent(new Set()); e.target.reset(); setMsg('Report published')
   }
+  // poster / video for an event, stored in the public 'team' bucket under events/
+  async function uploadMedia(file) {
+    const path = `events/${Date.now()}-${file.name.replace(/[^w.-]/g, '_')}`
+    const { error } = await db.storage.from('team').upload(path, file, { contentType: file.type })
+    if (error) throw new Error(error.message.includes('size') ? 'That file is too big. Try a shorter or smaller video (under 50 MB).' : `Upload failed: ${error.message}`)
+    return { media_url: db.storage.from('team').getPublicUrl(path).data.publicUrl, media_type: file.type.startsWith('video') ? 'video' : 'image' }
+  }
+  const mediaErr = m => m.includes('media_') ? 'Run supabase/event-media.sql in Supabase first, then try again.' : m
   async function addEvent(e) {
-    e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); o.prov = prov || o.prov; o.asms = [...selAsm]
+    e.preventDefault(); const f = new FormData(e.target), file = f.get('media'); f.delete('media')
+    const o = Object.fromEntries(f); o.prov = prov || o.prov; o.asms = [...selAsm]
+    setBusy(true)
+    try { if (file && file.size) Object.assign(o, await uploadMedia(file)) } catch (err) { setBusy(false); return setMsg(err.message) }
     const { error } = await db.from('events').insert(o)
-    if (error) return setMsg(error.message)
+    setBusy(false)
+    if (error) return setMsg(mediaErr(error.message))
     e.target.reset(); setSelAsm(new Set()); setMsg('Event added'); load()
+  }
+  async function setEventMedia(ev, file) {
+    if (!file) return
+    setBusy(true)
+    try {
+      const m = await uploadMedia(file)
+      const { error } = await db.from('events').update(m).eq('id', ev.id)
+      if (error) throw new Error(mediaErr(error.message))
+      if (photoPath(ev.media_url)) await db.storage.from('team').remove([photoPath(ev.media_url)])
+      setMsg(`${m.media_type === 'video' ? 'Video' : 'Poster'} added to ${ev.title}`); load()
+    } catch (err) { setMsg(err.message) }
+    setBusy(false)
+  }
+  async function removeEventMedia(ev) {
+    if (!confirm(`Remove the ${ev.media_type === 'video' ? 'video' : 'poster'} from ${ev.title}?`)) return
+    const { error } = await db.from('events').update({ media_url: null, media_type: null }).eq('id', ev.id)
+    if (error) return setMsg(error.message)
+    if (photoPath(ev.media_url)) await db.storage.from('team').remove([photoPath(ev.media_url)])
+    load()
+  }
+  async function delEvent(ev) {
+    if (!confirm(`Delete the event "${ev.title}"? Its attendance records will be deleted too.`)) return
+    const { error } = await db.from('events').delete().eq('id', ev.id)
+    if (error) return setMsg(error.message)
+    if (photoPath(ev.media_url)) await db.storage.from('team').remove([photoPath(ev.media_url)])
+    if (open === ev.id) setOpen(null)
+    setMsg(`Deleted ${ev.title}`); load()
   }
   const invited = ev => members.filter(m => ev.asms?.length ? ev.asms.includes(m.asm) : !ev.prov || m.prov === ev.prov)
   async function openAtt(ev) {
@@ -275,21 +314,31 @@ export default function Admin() {
             <input type="checkbox" style={{ width: 'auto' }} checked={present.has(m.id)} onChange={e => { const s = new Set(present); e.target.checked ? s.add(m.id) : s.delete(m.id); setPresent(s) }} />{m.name} <span className="mu">{m.asm}</span></label>)}</div></details>
         <button className="btn">Publish report</button></form>
       <h2>Add event</h2>
-      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}</div>
+      <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="Date *" name="date" type="date" required /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}<F l="Poster or video (optional)" name="media" type="file" accept="image/*,video/*" /></div>
         <label>Assemblies involved ({selAsm.size ? `${selAsm.size} selected` : 'none selected = all'})</label>
         {assemblies.length ? <div style={{ maxHeight: 220, overflow: 'auto', margin: '6px 0 10px' }}>
           <label style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}><input type="checkbox" style={{ width: 'auto' }} checked={selAsm.size === assemblies.length} onChange={e => setSelAsm(e.target.checked ? new Set(assemblies) : new Set())} /><b>Select all</b></label>
           {assemblies.map(a => <label key={a} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
             <input type="checkbox" style={{ width: 'auto' }} checked={selAsm.has(a)} onChange={e => { const s = new Set(selAsm); e.target.checked ? s.add(a) : s.delete(a); setSelAsm(s) }} />{a}</label>)}
         </div> : <p className="mu">No assemblies for this province yet.</p>}
-        <button className="btn">Add event</button></form>
+        <button className="btn" disabled={busy}>{busy ? 'Uploading…' : 'Add event'}</button></form>
       <h2>Events &amp; attendance</h2>
       {events.map(ev => {
         const ppl = invited(ev), n = s => ppl.filter(m => marks[m.id] === s).length
         return <div className="card" key={ev.id} style={{ marginBottom: 12, borderTop: '5px solid var(--red)' }}>
-          <h3>{ev.title}</h3>
-          <div className="mu">{[ev.date, ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div>
-          <button className="btn g" onClick={() => openAtt(ev)}>{open === ev.id ? 'Close' : 'Mark attendance'}</button>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {ev.media_url && (ev.media_type === 'video' ? <video src={ev.media_url} controls preload="metadata" style={{ width: 200, borderRadius: 8, background: '#000' }} />
+              : <img src={ev.media_url} alt="" style={{ width: 120, maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />)}
+            <div style={{ flex: 1, minWidth: 200 }}><h3>{ev.title}</h3>
+              <div className="mu">{[ev.date, ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div></div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: 6 }}>
+            <button className="btn g" onClick={() => openAtt(ev)}>{open === ev.id ? 'Close' : 'Mark attendance'}</button>
+            <label className="btn g" style={{ opacity: busy ? .6 : 1 }}>{busy ? 'Uploading…' : ev.media_url ? 'Replace poster / video' : '+ Add poster / video'}
+              <input type="file" accept="image/*,video/*" hidden disabled={busy} onChange={e => { setEventMedia(ev, e.target.files[0]); e.target.value = '' }} /></label>
+            {ev.media_url && <button className="btn g" onClick={() => removeEventMedia(ev)}>Remove {ev.media_type === 'video' ? 'video' : 'poster'}</button>}
+            <button className="btn g" style={{ color: 'var(--red)' }} onClick={() => delEvent(ev)}>Delete event</button>
+          </div>
           {open === ev.id && <>
             <p><b>Present {n('Present')}</b> · Absent {n('Absent')} · Not marked {ppl.length - n('Present') - n('Absent')}</p>
             <div className="scroll"><table><thead><tr><th>Name</th><th>Assembly</th><th>Attendance</th></tr></thead>

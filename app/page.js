@@ -1,6 +1,7 @@
 import { supabase as db } from '@/lib/supabase'
 import Register from '@/components/Register'
 import TeamMarquee from '@/components/TeamMarquee'
+import EventCard from '@/components/EventCard'
 import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
@@ -47,7 +48,7 @@ export default async function Home() {
         <div className="mu">{x.prov}{x.asm && ` · ${x.asm}`} · {x.date}</div><p><b>{x.count}</b> attended{x.women != null && ` (W ${x.women}, M ${x.men}, Youth ${x.youth}, SS ${x.sunday})`}<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
         {!reports.length && <p className="mu">No reports yet.</p>}</div>
       <h2 id="events">Upcoming Events</h2>
-      <div className="grid">{events.map(x => <div className="card" key={x.id} style={{ borderTop: '5px solid var(--red)' }}><h3>{x.title}</h3><div className="mu">{x.date} {x.time} {x.venue && `· ${x.venue}`} {x.prov && `· ${x.prov}`}</div>{x.asms?.length > 0 && <div className="mu">Assemblies: {x.asms.join(', ')}</div>}</div>)}
+      <div className="grid">{events.map(x => <EventCard key={x.id} x={x} />)}
         {!events.length && <p className="mu">No upcoming events.</p>}</div>
       <h2 id="team">Meet the Team</h2>
       {top.length > 0 && <TeamMarquee people={top} />}

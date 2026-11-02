@@ -4,6 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import Congregants from '@/components/Congregants'
+import EventCard from '@/components/EventCard'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
 export const revalidate = 60
@@ -36,7 +37,7 @@ export default async function Assembly({ params }) {
       <h2 id="congregants">Congregants</h2>
       <Congregants asm={asm} prov={prov} />
       <h2>Upcoming Events</h2>
-      <div className="grid">{events.map(x => <div className="card" key={x.id} style={{ borderTop: '5px solid var(--red)' }}><h3>{x.title}</h3><div className="mu">{[x.date, x.time, x.venue].filter(Boolean).join(' · ')}</div></div>)}
+      <div className="grid">{events.map(x => <EventCard key={x.id} x={x} showProv={false} />)}
         {!events.length && <p className="mu">No upcoming events.</p>}</div>
       <h2>Recent Reports</h2>
       <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3><div className="mu">{x.date}</div>

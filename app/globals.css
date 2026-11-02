@@ -105,3 +105,7 @@ img{max-width:100%}
 @keyframes marquee-right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @media(max-width:700px){.marquee-track>div{width:160px;margin-right:10px}}
 @media(prefers-reduced-motion:reduce){.marquee{overflow-x:auto;-webkit-mask:none;mask:none}.marquee-track{animation:none}}
+/* ---- events with poster / video ---- */
+.event{padding:0;overflow:hidden;border-top:5px solid var(--red)}
+.event img,.event video{display:block;width:100%;max-height:520px;object-fit:contain;background:var(--navy)}
+.event-body{padding:14px 16px 16px}
