@@ -1,6 +1,6 @@
 'use client'
 import { ASSEMBLIES, provOf } from '@/lib/assemblies'
-const NAT = '263789016651'
+const NAT = '263716642454'
 export default function Register() {
   function send(e) {
     e.preventDefault()
@@ -22,7 +22,7 @@ export default function Register() {
         <div><label>Ministry (optional)</label><input name="min" /></div>
       </div>
       <button className="btn">Send registration on WhatsApp</button>
-      <p className="mu">Your details go to the church admin on WhatsApp (+263 789 016 651).</p>
+      <p className="mu">Your details go to the church admin on WhatsApp (+263 716 642 454).</p>
     </form>
   )
 }
