@@ -38,7 +38,7 @@ export default async function Assembly({ params }) {
       <h2 id="congregants">Congregants</h2>
       <Congregants asm={asm} prov={prov} />
       <h2>Upcoming Events</h2>
-      <div className="grid">{events.map(x => <EventCard key={x.id} x={x} showProv={false} />)}
+      <div className="grid events">{events.map(x => <EventCard key={x.id} x={x} showProv={false} />)}
         {!events.length && <p className="mu">No upcoming events.</p>}</div>
       <h2>Recent Reports</h2>
       <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3><div className="mu">{x.date}</div>

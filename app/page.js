@@ -49,7 +49,7 @@ export default async function Home() {
         <div className="mu">{x.prov}{x.asm && ` · ${x.asm}`} · {x.date}</div><p><b>{x.count}</b> attended{x.women != null && ` (W ${x.women}, M ${x.men}, Youth ${x.youth}, SS ${x.sunday})`}<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
         {!reports.length && <p className="mu">No reports yet.</p>}</div>
       <h2 id="events">Upcoming Events</h2>
-      <div className="grid">{events.map(x => <EventCard key={x.id} x={x} />)}
+      <div className="grid events">{events.map(x => <EventCard key={x.id} x={x} />)}
         {!events.length && <p className="mu">No upcoming events.</p>}</div>
       <h2 id="team">Meet the Team</h2>
       {top.length > 0 && <TeamMarquee people={top} />}
