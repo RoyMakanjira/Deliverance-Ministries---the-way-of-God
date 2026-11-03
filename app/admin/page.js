@@ -6,6 +6,7 @@ import Person from '@/components/Person'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
+const MIN = { men: "Men's", women: "Women's", youth: 'Youth' }, ST = ['New', 'Read', 'Being handled', 'Resolved']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
   const a = m.dob ? Math.floor((Date.now() - new Date(m.dob)) / 31557600000) : null
@@ -27,6 +28,7 @@ export default function Admin() {
     if (user) {
       const { data: s } = await db.from('staff').select('*').eq('user_id', user.id).maybeSingle()
       setMe(s)
+      if (s?.role === 'ministry') { setNotes((await db.from('feedback').select('*').order('created_at', { ascending: false })).data || []); return setReady(true) }
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
       if (s) setGifts((await db.from('giving').select('*').order('created_at', { ascending: false })).data || [])
@@ -225,11 +227,37 @@ export default function Admin() {
     if (cleared.length) await db.from('event_attendance').delete().eq('event_id', ev.id).in('member_id', cleared)
     setMsg(`Attendance saved for ${ev.title}`)
   }
+  // anonymous messages: the national admin sees all ministries, a ministry leader only their own (enforced by RLS)
+  const notesView = () => {
+    const mine = me.role === 'ministry'
+    const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
+    return <>
+      <div className="grid stats">{[['New', notes.filter(n => n.status === 'New').length], ['Being handled', notes.filter(n => n.status === 'Being handled').length], ['Resolved', notes.filter(n => n.status === 'Resolved').length]].map(([l, c]) => <div className="stat" key={l}><b>{c}</b>{l}</div>)}</div>
+      <div className="form">{!mine && <select value={nf.ministry} onChange={e => setNf({ ...nf, ministry: e.target.value })}><option value="">All ministries</option>{Object.entries(MIN).map(([k, v]) => <option key={k} value={k}>{v} Ministry</option>)}</select>}
+        <select value={nf.status} onChange={e => setNf({ ...nf, status: e.target.value })}><option value="">Any status</option>{ST.map(x => <option key={x}>{x}</option>)}</select></div>
+      {rows.map(n => <div key={n.id} className="card" style={{ marginBottom: 10, borderLeft: `5px solid ${n.status === 'New' ? 'var(--red)' : n.status === 'Resolved' ? '#2e9d5b' : 'var(--btn)'}` }}>
+        <div className="mu">{new Date(n.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} · <b>{MIN[n.ministry]} Ministry</b>{n.topic && ` · ${n.topic}`}{n.asm && ` · ${n.asm}`}</div>
+        <p style={{ whiteSpace: 'pre-wrap', margin: '8px 0' }}>{n.message}</p>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><select value={n.status} onChange={e => setNoteStatus(n, e.target.value)} style={{ width: 'auto' }}>{ST.map(x => <option key={x}>{x}</option>)}</select>
+          {!mine && <button className="btn g" onClick={() => delNote(n)}>Delete</button>}</div>
+      </div>)}
+      {!rows.length && <p className="mu">No messages yet.</p>}
+    </>
+  }
   if (!ready) return <p style={{ padding: 20 }}>Loading…</p>
   if (!me) return (
     <div className="wrap" style={{ maxWidth: 420, paddingTop: 60 }}><h2 style={{ marginTop: 0 }}>Admin login</h2>
       <form className="card" onSubmit={login}><F l="Email" name="email" type="email" required /><br /><F l="Password" name="password" type="password" required /><br />
         <button className="btn">Sign in</button><p className="mu">{msg || 'Sign in with the account your national admin created for you.'}</p></form></div>
+  )
+  const signOut = <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button>
+  if (me.role === 'ministry') return (
+    <div className="wrap" style={{ paddingTop: 20 }}>
+      <p><a href="/">← Home</a> · {MIN[me.ministry]} Ministry leader · {signOut} <b>{msg}</b></p>
+      <h2>{MIN[me.ministry]} Ministry — anonymous messages</h2>
+      <p className="mu" style={{ textAlign: 'center' }}>Sent from the <a href={`/ministry/${me.ministry}`}>{MIN[me.ministry]} Ministry page</a>. The sender's name is never collected. Mark each message as you deal with it — the national admin can see the status too.</p>
+      {notesView()}
+    </div>
   )
   const assemblies = [...new Set([...(prov ? ASSEMBLIES[prov] || [] : Object.values(ASSEMBLIES).flat()), ...members.map(m => m.asm).filter(Boolean)])].sort()
   const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm}`.toLowerCase().includes(q.toLowerCase()))
@@ -239,7 +267,7 @@ export default function Admin() {
     <div className="wrap" style={{ paddingTop: 20 }}>
       <datalist id="asms">{assemblies.map(a => <option key={a} value={a} />)}</datalist>
       <datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
-      <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button> <b>{msg}</b></p>
+      <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · {signOut} <b>{msg}</b></p>
       <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
 
       {me.role === 'super' && <>
@@ -262,22 +290,7 @@ export default function Admin() {
       {me.role === 'super' && <>
         <h2>Anonymous messages</h2>
         <p className="mu" style={{ textAlign: 'center' }}>Sent from the Men's, Women's and Youth ministry pages. The sender's name is never collected.</p>
-        {(() => {
-          const MIN = { men: "Men's", women: "Women's", youth: 'Youth' }, ST = ['New', 'Read', 'Being handled', 'Resolved']
-          const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
-          return <>
-            <div className="grid stats">{[['New', notes.filter(n => n.status === 'New').length], ['Being handled', notes.filter(n => n.status === 'Being handled').length], ['Resolved', notes.filter(n => n.status === 'Resolved').length]].map(([l, c]) => <div className="stat" key={l}><b>{c}</b>{l}</div>)}</div>
-            <div className="form"><select value={nf.ministry} onChange={e => setNf({ ...nf, ministry: e.target.value })}><option value="">All ministries</option>{Object.entries(MIN).map(([k, v]) => <option key={k} value={k}>{v} Ministry</option>)}</select>
-              <select value={nf.status} onChange={e => setNf({ ...nf, status: e.target.value })}><option value="">Any status</option>{ST.map(x => <option key={x}>{x}</option>)}</select></div>
-            {rows.map(n => <div key={n.id} className="card" style={{ marginBottom: 10, borderLeft: `5px solid ${n.status === 'New' ? 'var(--red)' : n.status === 'Resolved' ? '#2e9d5b' : 'var(--btn)'}` }}>
-              <div className="mu">{new Date(n.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} · <b>{MIN[n.ministry]} Ministry</b>{n.topic && ` · ${n.topic}`}{n.asm && ` · ${n.asm}`}</div>
-              <p style={{ whiteSpace: 'pre-wrap', margin: '8px 0' }}>{n.message}</p>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><select value={n.status} onChange={e => setNoteStatus(n, e.target.value)} style={{ width: 'auto' }}>{ST.map(x => <option key={x}>{x}</option>)}</select>
-                <button className="btn g" onClick={() => delNote(n)}>Delete</button></div>
-            </div>)}
-            {!rows.length && <p className="mu">No messages yet.</p>}
-          </>
-        })()}
+        {notesView()}
       </>}
 
       <h2>Giving</h2>

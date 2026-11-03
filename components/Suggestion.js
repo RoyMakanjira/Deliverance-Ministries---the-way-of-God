@@ -23,7 +23,7 @@ export default function Suggestion({ ministry, title }) {
   return (
     <form className="card anon" onSubmit={send}>
       <h3>🔒 Anonymous message to leadership</h3>
-      <p className="mu" style={{ marginTop: 0 }}>Is there something in the church or the {title} that the leadership needs to fix or improve? Tell us here. <b>You do not give your name, and nothing that identifies you is saved.</b> Only the national leadership can read these messages.</p>
+      <p className="mu" style={{ marginTop: 0 }}>Is there something in the church or the {title} that the leadership needs to fix or improve? Tell us here. <b>You do not give your name, and nothing that identifies you is saved.</b> Only the national leadership and the leaders of this ministry can read these messages.</p>
       <div className="form">
         <div><label>What is it about? (optional)</label><select name="topic" defaultValue=""><option value="">Choose…</option>{TOPICS.map(t => <option key={t}>{t}</option>)}</select></div>
         <div><label>Which assembly? (optional)</label><select name="asm" defaultValue=""><option value="">Prefer not to say</option>
