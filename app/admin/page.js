@@ -3,10 +3,10 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
+import AdminLogin from '@/components/AdminLogin'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
-const MIN = { men: "Men's", women: "Women's", youth: 'Youth' }, ST = ['New', 'Read', 'Being handled', 'Resolved']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
   const a = m.dob ? Math.floor((Date.now() - new Date(m.dob)) / 31557600000) : null
@@ -15,6 +15,8 @@ const grp = m => {
   return m.gender === 'Female' ? 'women' : m.gender === 'Male' ? 'men' : 'other'
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
+// jump menu at the top of the dashboard; true = national admin only
+const SECTIONS = [['content', 'Website content', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Team', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -22,17 +24,17 @@ export default function Admin() {
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
-  const [notes, setNotes] = useState([]), [nf, setNf] = useState({ ministry: '', status: '' })
+  const [newNotes, setNewNotes] = useState(0)
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
       const { data: s } = await db.from('staff').select('*').eq('user_id', user.id).maybeSingle()
       setMe(s)
-      if (s?.role === 'ministry') { setNotes((await db.from('feedback').select('*').order('created_at', { ascending: false })).data || []); return setReady(true) }
+      if (s?.role === 'ministry') return window.location.replace('/admin/messages') // ministry leaders only have the messages dashboard
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
       if (s) setGifts((await db.from('giving').select('*').order('created_at', { ascending: false })).data || [])
-      if (s?.role === 'super') setNotes((await db.from('feedback').select('*').order('created_at', { ascending: false })).data || [])
+      if (s?.role === 'super') setNewNotes((await db.from('feedback').select('id', { count: 'exact', head: true }).eq('status', 'New')).count || 0)
       if (s?.role === 'super') setContent(withDefaults((await db.from('content').select('*')).data))
       if (s) setTeam(((await db.from('team').select('*').order('name')).data || []).filter(x => s.role === 'super' || x.prov === s.province))
     }
@@ -41,11 +43,6 @@ export default function Admin() {
   useEffect(() => { load() }, [load])
   const prov = me?.role === 'province' ? me.province : null
   const provSel = (d = '') => prov ? null : <div><label>Province</label><select name="prov" defaultValue={d}>{PROV.map(p => <option key={p}>{p}</option>)}</select></div>
-  async function login(e) {
-    e.preventDefault(); const f = new FormData(e.target)
-    const { error } = await db.auth.signInWithPassword({ email: f.get('email'), password: f.get('password') })
-    error ? setMsg(error.message) : load()
-  }
   // ---- congregants ----
   const memberFields = (m = {}) => {
     const d = k => m[k] ?? ''
@@ -146,13 +143,6 @@ export default function Admin() {
     if (v.status !== 'Pending') await db.from('giving').update({ status: v.status }).eq('id', data.id)
     e.target.reset(); setMsg('Giving recorded'); load()
   }
-  // ---- anonymous messages from the ministry pages ----
-  async function setNoteStatus(n, status) {
-    const { error } = await db.from('feedback').update({ status }).eq('id', n.id)
-    if (error) return setMsg(error.message)
-    setNotes(notes.map(x => x.id === n.id ? { ...x, status } : x))
-  }
-  async function delNote(n) { if (confirm('Delete this message?')) { await db.from('feedback').delete().eq('id', n.id); setNotes(notes.filter(x => x.id !== n.id)) } }
   // ---- reports / events ----
   async function addReport(e) {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); const p = prov || o.prov
@@ -227,38 +217,9 @@ export default function Admin() {
     if (cleared.length) await db.from('event_attendance').delete().eq('event_id', ev.id).in('member_id', cleared)
     setMsg(`Attendance saved for ${ev.title}`)
   }
-  // anonymous messages: the national admin sees all ministries, a ministry leader only their own (enforced by RLS)
-  const notesView = () => {
-    const mine = me.role === 'ministry'
-    const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
-    return <>
-      <div className="grid stats">{[['New', notes.filter(n => n.status === 'New').length], ['Being handled', notes.filter(n => n.status === 'Being handled').length], ['Resolved', notes.filter(n => n.status === 'Resolved').length]].map(([l, c]) => <div className="stat" key={l}><b>{c}</b>{l}</div>)}</div>
-      <div className="form">{!mine && <select value={nf.ministry} onChange={e => setNf({ ...nf, ministry: e.target.value })}><option value="">All ministries</option>{Object.entries(MIN).map(([k, v]) => <option key={k} value={k}>{v} Ministry</option>)}</select>}
-        <select value={nf.status} onChange={e => setNf({ ...nf, status: e.target.value })}><option value="">Any status</option>{ST.map(x => <option key={x}>{x}</option>)}</select></div>
-      {rows.map(n => <div key={n.id} className="card" style={{ marginBottom: 10, borderLeft: `5px solid ${n.status === 'New' ? 'var(--red)' : n.status === 'Resolved' ? '#2e9d5b' : 'var(--btn)'}` }}>
-        <div className="mu">{new Date(n.created_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })} · <b>{MIN[n.ministry]} Ministry</b>{n.topic && ` · ${n.topic}`}{n.asm && ` · ${n.asm}`}</div>
-        <p style={{ whiteSpace: 'pre-wrap', margin: '8px 0' }}>{n.message}</p>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><select value={n.status} onChange={e => setNoteStatus(n, e.target.value)} style={{ width: 'auto' }}>{ST.map(x => <option key={x}>{x}</option>)}</select>
-          {!mine && <button className="btn g" onClick={() => delNote(n)}>Delete</button>}</div>
-      </div>)}
-      {!rows.length && <p className="mu">No messages yet.</p>}
-    </>
-  }
   if (!ready) return <p style={{ padding: 20 }}>Loading…</p>
-  if (!me) return (
-    <div className="wrap" style={{ maxWidth: 420, paddingTop: 60 }}><h2 style={{ marginTop: 0 }}>Admin login</h2>
-      <form className="card" onSubmit={login}><F l="Email" name="email" type="email" required /><br /><F l="Password" name="password" type="password" required /><br />
-        <button className="btn">Sign in</button><p className="mu">{msg || 'Sign in with the account your national admin created for you.'}</p></form></div>
-  )
+  if (!me) return <AdminLogin onDone={load} />
   const signOut = <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button>
-  if (me.role === 'ministry') return (
-    <div className="wrap" style={{ paddingTop: 20 }}>
-      <p><a href="/">← Home</a> · {MIN[me.ministry]} Ministry leader · {signOut} <b>{msg}</b></p>
-      <h2>{MIN[me.ministry]} Ministry — anonymous messages</h2>
-      <p className="mu" style={{ textAlign: 'center' }}>Sent from the <a href={`/ministry/${me.ministry}`}>{MIN[me.ministry]} Ministry page</a>. The sender's name is never collected. Mark each message as you deal with it — the national admin can see the status too.</p>
-      {notesView()}
-    </div>
-  )
   const assemblies = [...new Set([...(prov ? ASSEMBLIES[prov] || [] : Object.values(ASSEMBLIES).flat()), ...members.map(m => m.asm).filter(Boolean)])].sort()
   const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm}`.toLowerCase().includes(q.toLowerCase()))
   const aMembers = asmSel ? members.filter(m => sameAsm(m.asm, asmSel)) : []
@@ -268,11 +229,13 @@ export default function Admin() {
       <datalist id="asms">{assemblies.map(a => <option key={a} value={a} />)}</datalist>
       <datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
       <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · {signOut} <b>{msg}</b></p>
+      {me.role === 'super' && <div className="dash-switch"><b>National admin dashboard</b><a href="/admin/messages">Anonymous messages{newNotes > 0 && <span className="badge">{newNotes} new</span>}</a></div>}
+      <nav className="admin-menu">{SECTIONS.filter(([, , sup]) => !sup || me.role === 'super').map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
       <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
 
       {me.role === 'super' && <>
-        <h2>Website content</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry (Men’s, Women’s, Youth, Children’s) and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”.</p>
+        <h2 id="content">Website content</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry (Men’s, Women’s, Youth, Children’s) and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”. <b>Click a section's name below to open it and edit.</b></p>
         {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>
           <form onSubmit={e => saveContent(e, s)}>
             <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{MINISTRIES.includes(s.key) && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
@@ -287,13 +250,7 @@ export default function Admin() {
           </form></details>)}
       </>}
 
-      {me.role === 'super' && <>
-        <h2>Anonymous messages</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Sent from the Men's, Women's and Youth ministry pages. The sender's name is never collected.</p>
-        {notesView()}
-      </>}
-
-      <h2>Giving</h2>
+      <h2 id="giving">Giving</h2>
       {(() => {
         const dests = prov ? ASSEMBLIES[prov] : [BISHOP, ...Object.values(ASSEMBLIES).flat()]
         const rows = gifts.filter(g => (!gf.kind || g.kind === gf.kind) && (!gf.dest || g.dest === gf.dest) && (!gf.status || g.status === gf.status))
@@ -325,7 +282,7 @@ export default function Admin() {
         </>
       })()}
 
-      <h2>Manage an assembly</h2>
+      <h2 id="assembly">Manage an assembly</h2>
       <div className="card"><label>Choose an assembly</label>
         <select value={asmSel} onChange={e => { setAsmSel(e.target.value); setEditM(null); setEditT(null) }}><option value="">— Select —</option>
           {(prov ? [prov] : PROV).map(p => <optgroup key={p} label={p}>{ASSEMBLIES[p].map(a => <option key={a}>{a}</option>)}</optgroup>)}</select>
@@ -348,13 +305,13 @@ export default function Admin() {
           <form key={`m-${asmSel}`} onSubmit={e => saveMember(e)}>{memberFields({ asm: asmSel, prov: provOf(asmSel) })}<button className="btn">Save congregant</button></form></details>
       </>}
 
-      <h2>Add congregant</h2>
+      <h2 id="add-congregant">Add congregant</h2>
       <form className="card" onSubmit={e => saveMember(e)}>{memberFields()}<button className="btn">Save congregant</button></form>
-      <h2>All congregants</h2>
+      <h2 id="congregants">All congregants</h2>
       <input placeholder="Search name, phone, assembly…" value={q} onChange={e => setQ(e.target.value)} />
       {memberEditor('all')}
       {memberTable(list, 'all')}
-      <h2>Service / Big Sunday report</h2>
+      <h2 id="report">Service / Big Sunday report</h2>
       <form className="card" onSubmit={addReport}><div className="form">
         {provSel()}<F l="Assembly / venue" name="asm" list="asms" /><F l="Date *" name="date" type="date" required /><F l="Total attendance (min = ticked)" name="count" type="number" min="0" />
         <F l="Preacher" name="preacher" /><F l="Title / scripture" name="title" /></div>
@@ -363,7 +320,7 @@ export default function Admin() {
           <div style={{ maxHeight: 280, overflow: 'auto' }}>{list.map(m => <label key={m.id} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
             <input type="checkbox" style={{ width: 'auto' }} checked={present.has(m.id)} onChange={e => { const s = new Set(present); e.target.checked ? s.add(m.id) : s.delete(m.id); setPresent(s) }} />{m.name} <span className="mu">{m.asm}</span></label>)}</div></details>
         <button className="btn">Publish report</button></form>
-      <h2>Add event</h2>
+      <h2 id="add-event">Add event</h2>
       <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="From date *" name="date" type="date" required /><F l="To date (if more than one day)" name="end_date" type="date" /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}<F l="Poster or video (optional)" name="media" type="file" accept="image/*,video/*" /></div>
         <label>Assemblies involved ({selAsm.size ? `${selAsm.size} selected` : 'none selected = all'})</label>
         {assemblies.length ? <div style={{ maxHeight: 220, overflow: 'auto', margin: '6px 0 10px' }}>
@@ -372,7 +329,7 @@ export default function Admin() {
             <input type="checkbox" style={{ width: 'auto' }} checked={selAsm.has(a)} onChange={e => { const s = new Set(selAsm); e.target.checked ? s.add(a) : s.delete(a); setSelAsm(s) }} />{a}</label>)}
         </div> : <p className="mu">No assemblies for this province yet.</p>}
         <button className="btn" disabled={busy}>{busy ? 'Uploading…' : 'Add event'}</button></form>
-      <h2>Events &amp; attendance</h2>
+      <h2 id="events">Events &amp; attendance</h2>
       {events.map(ev => {
         const ppl = invited(ev), n = s => ppl.filter(m => marks[m.id] === s).length
         return <div className="card" key={ev.id} style={{ marginBottom: 12, borderTop: '5px solid var(--red)' }}>
@@ -402,7 +359,7 @@ export default function Admin() {
       })}
       {!events.length && <p className="mu">No events yet.</p>}
       {me.role === 'super' && <>
-        <h2>Meet the Team</h2>
+        <h2 id="team-admin">Meet the Team</h2>
         <form className="card" onSubmit={e => saveTeam(e)}>{teamFields()}<button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Add team member'}</button></form>
         {teamEditor('all')}
         <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Assembly</th><th>Province</th><th></th></tr></thead>
