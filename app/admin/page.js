@@ -376,7 +376,7 @@ export default function Admin() {
       {!events.length && <p className="mu">No events yet.</p>}
       {me.role === 'super' && <>
         <h2 id="team-admin">Meet the Leaders</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Give someone the role Bishop, Overseer, Secretary, Administrator or Advisor to show them in the top space on the homepage. Everyone else appears under Meet the Leaders.</p>
+        <p className="mu" style={{ textAlign: 'center' }}>Give someone the role Bishop, Overseer, Secretary, Administrator or Advisor to show them under National Executive Board on the homepage. Everyone else appears under Meet the Leaders.</p>
         <form className="card" onSubmit={e => saveTeam(e)}>{teamFields()}<button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Add leader'}</button></form>
         {teamEditor('all')}
         <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Assembly</th><th>Province</th><th></th></tr></thead>

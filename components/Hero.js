@@ -4,7 +4,7 @@ const LINES = [['Deliverance', 'Ministries'], ['&', 'The', 'Way', 'of', 'God']]
 const SPARKS = Array.from({ length: 22 }, (_, i) => ({
   left: (i * 37 + 11) % 100, size: 3 + ((i * 7) % 5), dur: 9 + ((i * 5) % 9), delay: -((i * 13) % 17),
 }))
-export default function Hero() {
+export default function Hero({ hasReports }) {
   let n = 0
   return (
     <section className="hero hero-magic">
@@ -15,7 +15,7 @@ export default function Hero() {
       <h1 aria-label="Deliverance Ministries & The Way of God">{LINES.map((ws, li) => <span key={li} className="hero-line" aria-hidden="true">
         {ws.map(w => <span key={w} className={`hero-word${w === 'God' ? ' hero-god' : ''}`} style={{ animationDelay: `${0.6 + 0.16 * n++}s` }}>{w}</span>)}</span>)}</h1>
       <p className="hero-in" style={{ animationDelay: '1.9s' }}>Church International</p>
-      <div className="hero-in" style={{ animationDelay: '2.2s' }}><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#give">Give</a><a className="btn w" href="#reports">Latest Reports</a></div>
+      <div className="hero-in" style={{ animationDelay: '2.2s' }}><a className="btn w" href="#register">Join Us</a><a className="btn w" href="#give">Give</a>{hasReports && <a className="btn w" href="#reports">Latest Reports</a>}</div>
       <a href="#about" className="hero-scroll hero-in" style={{ animationDelay: '2.8s' }} aria-label="Scroll down"><span /></a>
     </section>
   )

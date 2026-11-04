@@ -14,7 +14,7 @@ export const revalidate = 60
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
 const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
-// titles shown in the top leadership space, in this order; anyone else goes under Meet the Leaders
+// titles shown under National Executive Board, in this order; anyone else goes under Meet the Leaders
 const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advisor', 'adviser']
 const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
@@ -36,7 +36,7 @@ export default async function Home() {
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
       <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
-    <Hero />
+    <Hero hasReports={reports.length > 0} />
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
       <h2 id="about">{about.title}</h2>
@@ -57,7 +57,7 @@ export default async function Home() {
       </>}
       <h2 id="events">Upcoming Events</h2>
       {events.length > 0 ? <EventMarquee events={events} /> : <p className="mu">No upcoming events.</p>}
-      <h2 id="leaders">Meet the Bishop, Overseers, Secretary, Admin &amp; Advisors</h2>
+      <h2 id="leaders">National Executive Board</h2>
       {heads.length > 0 ? <TeamMarquee people={heads} /> : <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>}
       <h2>Meet the Leaders</h2>
       {top.length > 0 && <TeamMarquee people={top} />}
