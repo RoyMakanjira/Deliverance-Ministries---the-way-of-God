@@ -97,7 +97,7 @@ img{max-width:100%}
 @media(prefers-reduced-motion:reduce){.hero-magic *,.hero-magic *::before{animation:none!important}.hero-word,.hero-in{opacity:1}.hero-sparks,.hero-rays{display:none}}
 .theme-btn{position:fixed;right:16px;bottom:16px;z-index:50;width:48px;height:48px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--tx);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:transform .2s}
 .theme-btn:hover{transform:scale(1.08) rotate(-12deg)}.theme-btn svg{width:22px;height:22px}
-/* ---- Meet the Team: slow scrolling strip ---- */
+/* ---- Meet the Leaders: slow scrolling strip ---- */
 .marquee{overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 .marquee-track{display:flex;width:max-content;animation:marquee-right linear infinite}
 .marquee-track>div{flex:none;width:220px;margin-right:16px}

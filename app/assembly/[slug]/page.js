@@ -12,7 +12,7 @@ export const revalidate = 60
 export const dynamicParams = false
 export const generateStaticParams = () => Object.values(ASSEMBLIES).flat().map(a => ({ slug: slug(a) }))
 export const generateMetadata = ({ params }) => ({ title: `${fromSlug(params.slug)} Assembly · Deliverance Ministries & The Way of God` })
-const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
+const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Advisor', 'Assembly Pastor']
 const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
 export default async function Assembly({ params }) {
   const asm = fromSlug(params.slug)

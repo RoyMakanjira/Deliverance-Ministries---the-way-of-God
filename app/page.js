@@ -14,6 +14,9 @@ export const revalidate = 60
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
 const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
+// titles shown in the top leadership space, in this order; anyone else goes under Meet the Leaders
+const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advisor', 'adviser']
+const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
   const [r, e, t, c] = await Promise.all([
@@ -27,11 +30,12 @@ export default async function Home() {
   const reports = r.data || [], events = upcoming(e.data, today), team = t.data || []
   const b = reports.filter(x => x.women != null)
   const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0)
-  const top = team.filter(x => x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))
+  const heads = team.filter(x => ti(x) >= 0).sort((a, c) => ti(a) - ti(c))
+  const top = team.filter(x => ti(x) < 0 && x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#team">Team</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#leaders">Leaders</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
     <Hero />
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
@@ -51,7 +55,9 @@ export default async function Home() {
         {!reports.length && <p className="mu">No reports yet.</p>}</div>
       <h2 id="events">Upcoming Events</h2>
       {events.length > 0 ? <EventMarquee events={events} /> : <p className="mu">No upcoming events.</p>}
-      <h2 id="team">Meet the Team</h2>
+      <h2 id="leaders">Meet the Bishop, Overseers, Secretary, Admin &amp; Advisors</h2>
+      {heads.length > 0 ? <TeamMarquee people={heads} /> : <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>}
+      <h2>Meet the Leaders</h2>
       {top.length > 0 && <TeamMarquee people={top} />}
       {pastors.length > 0 && <><h3 style={{ margin: '28px 0 12px' }}>Assembly Pastors</h3><TeamMarquee people={pastors} /></>}
       <h2 id="give">Tithes, Donations &amp; Pledges</h2>

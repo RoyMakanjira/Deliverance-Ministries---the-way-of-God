@@ -6,7 +6,7 @@ import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
-const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Assembly Pastor']
+const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Advisor', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
   const a = m.dob ? Math.floor((Date.now() - new Date(m.dob)) / 31557600000) : null
@@ -16,7 +16,7 @@ const grp = m => {
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 // jump menu at the top of the dashboard; true = national admin only
-const SECTIONS = [['content', 'Website content', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Team', true]]
+const SECTIONS = [['content', 'Website content', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -359,8 +359,9 @@ export default function Admin() {
       })}
       {!events.length && <p className="mu">No events yet.</p>}
       {me.role === 'super' && <>
-        <h2 id="team-admin">Meet the Team</h2>
-        <form className="card" onSubmit={e => saveTeam(e)}>{teamFields()}<button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Add team member'}</button></form>
+        <h2 id="team-admin">Meet the Leaders</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Give someone the role Bishop, Overseer, Secretary, Administrator or Advisor to show them in the top space on the homepage. Everyone else appears under Meet the Leaders.</p>
+        <form className="card" onSubmit={e => saveTeam(e)}>{teamFields()}<button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Add leader'}</button></form>
         {teamEditor('all')}
         <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Assembly</th><th>Province</th><th></th></tr></thead>
           <tbody>{team.map(x => <tr key={x.id}><td>{x.photo_url && <img src={x.photo_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '50%' }} />}</td><td>{x.name}</td><td>{x.role}</td><td>{x.asm}</td><td>{x.prov}</td>
