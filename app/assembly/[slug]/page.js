@@ -4,7 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import Congregants from '@/components/Congregants'
-import EventCard from '@/components/EventCard'
+import EventMarquee from '@/components/EventMarquee'
 import { since, upcoming } from '@/lib/dates'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
@@ -38,8 +38,7 @@ export default async function Assembly({ params }) {
       <h2 id="congregants">Congregants</h2>
       <Congregants asm={asm} prov={prov} />
       <h2>Upcoming Events</h2>
-      <div className="grid events">{events.map(x => <EventCard key={x.id} x={x} showProv={false} />)}
-        {!events.length && <p className="mu">No upcoming events.</p>}</div>
+      {events.length > 0 ? <EventMarquee events={events} showProv={false} /> : <p className="mu">No upcoming events.</p>}
       <h2>Recent Reports</h2>
       <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3><div className="mu">{x.date}</div>
         <p><b>{x.count}</b> attended<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
