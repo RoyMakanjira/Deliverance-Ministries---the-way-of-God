@@ -35,7 +35,7 @@ export default async function Home() {
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a><a href="#reports">Reports</a><a href="#events">Events</a><a href="#leaders">Leaders</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
     <Hero />
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
@@ -48,11 +48,13 @@ export default async function Home() {
       <h2 id="assemblies">Our Assemblies</h2>
       <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
         <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
-      <h2 id="reports">Latest Reports</h2>
-      {b.length > 0 && <div className="grid stats" style={{ marginBottom: 16 }}>{[['Total present', reports.reduce((a, x) => a + x.count, 0)], ['Women', sum('women')], ['Men', sum('men')], ['Youth', sum('youth')], ['Sunday School', sum('sunday')]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>}
-      <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3>
-        <div className="mu">{x.prov}{x.asm && ` · ${x.asm}`} · {x.date}</div><p><b>{x.count}</b> attended{x.women != null && ` (W ${x.women}, M ${x.men}, Youth ${x.youth}, SS ${x.sunday})`}<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
-        {!reports.length && <p className="mu">No reports yet.</p>}</div>
+      {reports.length > 0 && <>
+        <h2 id="reports">Latest Reports</h2>
+        {b.length > 0 && <div className="grid stats" style={{ marginBottom: 16 }}>{[['Total present', reports.reduce((a, x) => a + x.count, 0)], ['Women', sum('women')], ['Men', sum('men')], ['Youth', sum('youth')], ['Sunday School', sum('sunday')]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>}
+        <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3>
+          <div className="mu">{x.prov}{x.asm && ` · ${x.asm}`} · {x.date}</div><p><b>{x.count}</b> attended{x.women != null && ` (W ${x.women}, M ${x.men}, Youth ${x.youth}, SS ${x.sunday})`}<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
+        </div>
+      </>}
       <h2 id="events">Upcoming Events</h2>
       {events.length > 0 ? <EventMarquee events={events} /> : <p className="mu">No upcoming events.</p>}
       <h2 id="leaders">Meet the Bishop, Overseers, Secretary, Admin &amp; Advisors</h2>

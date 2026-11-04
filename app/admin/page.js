@@ -24,7 +24,7 @@ export default function Admin() {
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
-  const [newNotes, setNewNotes] = useState(0)
+  const [newNotes, setNewNotes] = useState(0), [reports, setReports] = useState([])
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -33,6 +33,7 @@ export default function Admin() {
       if (s?.role === 'ministry') return window.location.replace('/admin/messages') // ministry leaders only have the messages dashboard
       if (s) setMembers((await db.from('members').select('*').order('name')).data || [])
       if (s) setEvents(((await db.from('events').select('*').order('date', { ascending: false })).data || []).filter(x => s.role === 'super' || x.prov === s.province))
+      if (s) setReports((await db.from('reports').select('*').order('date', { ascending: false }).limit(50)).data || [])
       if (s) setGifts((await db.from('giving').select('*').order('created_at', { ascending: false })).data || [])
       if (s?.role === 'super') setNewNotes((await db.from('feedback').select('id', { count: 'exact', head: true }).eq('status', 'New')).count || 0)
       if (s?.role === 'super') setContent(withDefaults((await db.from('content').select('*')).data))
@@ -148,10 +149,21 @@ export default function Admin() {
     e.preventDefault(); const o = Object.fromEntries(new FormData(e.target)); const p = prov || o.prov
     const ms = members.filter(m => present.has(m.id)), b = { women: 0, men: 0, youth: 0, sunday: 0 }
     ms.forEach(m => { const g = grp(m); if (b[g] != null) b[g]++ })
-    const { data, error } = await db.from('reports').insert({ prov: p, asm: o.asm, date: o.date, title: o.title, preacher: o.preacher, word: o.word, count: Math.max(+o.count || 0, ms.length), ...(ms.length ? b : {}) }).select().single()
-    if (error) return setMsg(error.message)
+    const { data, error } = await db.from('reports').insert({ prov: p, asm: o.asm, date: o.date, title: o.title, preacher: o.preacher, word: o.word, count: Math.max(+o.count || 0, ms.length), published: me.role === 'super', ...(ms.length ? b : {}) }).select().single()
+    if (error) return setMsg(error.message.includes('published') ? 'Run supabase/report-publishing.sql in Supabase first, then try again.' : error.message)
     if (ms.length) await db.from('attendance').insert(ms.map(m => ({ report_id: data.id, member_id: m.id })))
-    setPresent(new Set()); e.target.reset(); setMsg('Report published')
+    setPresent(new Set()); e.target.reset(); setReports([data, ...reports]); setMsg(data.published ? 'Report published' : 'Report sent to the national admin')
+  }
+  async function setPublished(r, published) {
+    const { error } = await db.from('reports').update({ published }).eq('id', r.id)
+    if (error) return setMsg(error.message)
+    setReports(reports.map(x => x.id === r.id ? { ...x, published } : x))
+  }
+  async function delReport(r) {
+    if (!confirm(`Delete the report "${r.title || 'Service report'}" (${r.date})?`)) return
+    const { error } = await db.from('reports').delete().eq('id', r.id)
+    if (error) return setMsg(error.message)
+    setReports(reports.filter(x => x.id !== r.id))
   }
   // poster / video for an event, stored in the public 'team' bucket under events/
   async function uploadMedia(file) {
@@ -319,7 +331,11 @@ export default function Admin() {
         <details style={{ margin: '10px 0' }}><summary>Mark who attended ({present.size})</summary>
           <div style={{ maxHeight: 280, overflow: 'auto' }}>{list.map(m => <label key={m.id} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
             <input type="checkbox" style={{ width: 'auto' }} checked={present.has(m.id)} onChange={e => { const s = new Set(present); e.target.checked ? s.add(m.id) : s.delete(m.id); setPresent(s) }} />{m.name} <span className="mu">{m.asm}</span></label>)}</div></details>
-        <button className="btn">Publish report</button></form>
+        <button className="btn">{me.role === 'super' ? 'Publish report' : 'Send to national admin'}</button></form>
+      {reports.length > 0 && <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Date</th><th>Report</th><th>Province</th><th>Assembly</th><th>Attended</th><th>Status</th><th></th></tr></thead>
+        <tbody>{reports.map(r => <tr key={r.id}><td>{r.date}</td><td>{r.title || 'Service report'}</td><td>{r.prov}</td><td>{r.asm}</td><td>{r.count}</td>
+          <td>{r.published ? 'Published' : <b>Waiting for national admin</b>}</td>
+          <td>{me.role === 'super' && <><button className="btn g" onClick={() => setPublished(r, !r.published)}>{r.published ? 'Unpublish' : 'Publish'}</button><button className="btn g" onClick={() => delReport(r)}>Delete</button></>}</td></tr>)}</tbody></table></div>}
       <h2 id="add-event">Add event</h2>
       <form className="card" onSubmit={addEvent}><div className="form"><F l="Title *" name="title" required /><F l="From date *" name="date" type="date" required /><F l="To date (if more than one day)" name="end_date" type="date" /><F l="Time" name="time" type="time" /><F l="Venue" name="venue" />{provSel()}<F l="Poster or video (optional)" name="media" type="file" accept="image/*,video/*" /></div>
         <label>Assemblies involved ({selAsm.size ? `${selAsm.size} selected` : 'none selected = all'})</label>
