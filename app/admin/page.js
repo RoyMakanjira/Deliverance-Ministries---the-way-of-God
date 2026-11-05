@@ -18,7 +18,7 @@ const grp = m => {
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 // jump menu at the top of the dashboard; true = national admin only
-const SECTIONS = [['content', 'Website content', true], ['youth-page', 'Youth page', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
+const SECTIONS = [['content', 'Website content', true], ['ministry-pages', 'Ministry pages', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -26,7 +26,7 @@ export default function Admin() {
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
-  const [newNotes, setNewNotes] = useState(0), [reports, setReports] = useState([])
+  const [pageMin, setPageMin] = useState('youth'), [newNotes, setNewNotes] = useState(0), [reports, setReports] = useState([])
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -266,9 +266,10 @@ export default function Admin() {
       </>}
 
       {me.role === 'super' && <>
-        <h2 id="youth-page">Youth Ministry page</h2>
-        <p className="mu" style={{ textAlign: 'center' }}>Add pictures for the <a href="/ministry/youth">Youth Ministry page</a>. Click a section's name below to open it.</p>
-        <MinistryItemsAdmin ministry="youth" upload={uploadMedia} path={photoPath} />
+        <h2 id="ministry-pages">Ministry pages</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Choose a ministry, then click a section's name to add pictures to its <a href={`/ministry/${pageMin}`}>page</a>.</p>
+        <div style={{ maxWidth: 320, margin: '0 auto 12px' }}><select aria-label="Ministry" value={pageMin} onChange={e => setPageMin(e.target.value)}>{content.filter(s => MINISTRIES.includes(s.key)).map(s => <option key={s.key} value={s.key}>{s.title}</option>)}</select></div>
+        <MinistryItemsAdmin key={pageMin} ministry={pageMin} upload={uploadMedia} path={photoPath} />
       </>}
 
       <h2 id="giving">Giving</h2>

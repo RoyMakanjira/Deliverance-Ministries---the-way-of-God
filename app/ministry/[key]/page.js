@@ -11,8 +11,6 @@ export const dynamicParams = false
 export const generateStaticParams = () => MINISTRIES.map(key => ({ key }))
 // ministries whose page has the anonymous message box
 const ANON = ['men', 'women', 'youth']
-// ministries whose page has the picture sections (recent, upcoming, leadership, programs)
-const PICS = ['youth']
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 export async function generateMetadata({ params }) {
   const m = withDefaults([]).find(s => s.key === params.key)
@@ -20,17 +18,16 @@ export async function generateMetadata({ params }) {
 }
 export default async function Ministry({ params }) {
   if (!MINISTRIES.includes(params.key)) notFound()
-  const pics = PICS.includes(params.key)
-  const [{ data }, it] = await Promise.all([db.from('content').select('*'), pics ? db.from('ministry_items').select('*').eq('ministry', params.key) : {}])
+  const [{ data }, it] = await Promise.all([db.from('content').select('*'), db.from('ministry_items').select('*').eq('ministry', params.key)])
   const all = withDefaults(data), m = all.find(s => s.key === params.key)
   const others = all.filter(s => MINISTRIES.includes(s.key) && s.key !== m.key)
   return (<>
     <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
-      <nav><Link href="/#ministries">All ministries</Link>{pics && <><a href="#recent">Recent</a><a href="#upcoming">Upcoming</a><a href="#leadership">Leadership</a><a href="#programs">Programs</a></>}{ANON.includes(m.key) && <a href="#message">Anonymous message</a>}<a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
+      <nav><Link href="/#ministries">All ministries</Link><a href="#recent">Recent</a><a href="#upcoming">Upcoming</a><a href="#leadership">Leadership</a><a href="#programs">Programs</a>{ANON.includes(m.key) && <a href="#message">Anonymous message</a>}<a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
     <section className="hero small"><p>Ministry</p><h1>{m.title}</h1>{m.leader && <p>Led by {m.leader}</p>}</section>
     <div className="wrap">
       <div className={`about${m.image_url ? '' : ' solo'}`} style={{ marginTop: 48 }}>{m.image_url && <img src={m.image_url} alt="" />}<div><Paras t={m.body} /></div></div>
-      {pics && <MinistryItems items={it.data || []} today={new Date().toISOString().slice(0, 10)} />}
+      <MinistryItems items={it.data || []} today={new Date().toISOString().slice(0, 10)} />
       {ANON.includes(m.key) && <><h2 id="message">Speak to Leadership</h2><Suggestion ministry={m.key} title={m.title} /></>}
       <h2>Other ministries</h2>
       <div className="chips">{others.map(o => <Link key={o.key} href={`/ministry/${o.key}`}>{o.title}</Link>)}</div>
