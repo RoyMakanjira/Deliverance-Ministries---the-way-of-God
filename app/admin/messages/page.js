@@ -34,7 +34,7 @@ export default function Messages() {
   const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
   return (
     <div className="wrap" style={{ paddingTop: 20 }}>
-      <p><a href="/">← Home</a>{sup && <> · <a href="/admin">National admin dashboard</a></>} · {sup ? 'National admin' : `${MIN[me.ministry]} Ministry leader`} · {signOut} <b>{msg}</b></p>
+      <p><a href="/">← Home</a>{sup && <> · <a href="/admin">National admin dashboard</a></>} · {sup ? 'National admin' : `${MIN[me.ministry]} Ministry leader`} · <a href="/admin/set-password">Change password</a> · {signOut} <b>{msg}</b></p>
       <h2 style={{ marginTop: 10 }}>{mine ? `${MIN[me.ministry]} Ministry — anonymous messages` : 'Anonymous messages'}</h2>
       <p className="mu" style={{ textAlign: 'center' }}>{mine ? <>Sent from the <a href={`/ministry/${me.ministry}`}>{MIN[me.ministry]} Ministry page</a>.</> : "Sent from the Men's, Women's and Youth ministry pages."} The sender's name is never collected. Mark each message as you deal with it{mine && ' — the national admin can see the status too'}.</p>
       <div className="grid stats">{['New', 'Being handled', 'Resolved'].map(l => <div className="stat" key={l}><b>{notes.filter(n => n.status === l).length}</b>{l}</div>)}</div>

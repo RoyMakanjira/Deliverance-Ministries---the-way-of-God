@@ -240,7 +240,7 @@ export default function Admin() {
     <div className="wrap" style={{ paddingTop: 20 }}>
       <datalist id="asms">{assemblies.map(a => <option key={a} value={a} />)}</datalist>
       <datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
-      <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · {signOut} <b>{msg}</b></p>
+      <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <a href="/admin/set-password">Change password</a> · {signOut} <b>{msg}</b></p>
       {me.role === 'super' && <div className="dash-switch"><b>National admin dashboard</b><a href="/admin/messages">Anonymous messages{newNotes > 0 && <span className="badge">{newNotes} new</span>}</a></div>}
       <nav className="admin-menu">{SECTIONS.filter(([, , sup]) => !sup || me.role === 'super').map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
       <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
