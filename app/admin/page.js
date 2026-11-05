@@ -6,6 +6,7 @@ import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
+const NEW_REG = 'New Registration' // set by the public Join us / Register form
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Advisor', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
 const grp = m => {
@@ -43,7 +44,7 @@ export default function Admin() {
   }, [])
   useEffect(() => { load() }, [load])
   const prov = me?.role === 'province' ? me.province : null
-  const provSel = (d = '') => prov ? null : <div><label>Province</label><select name="prov" defaultValue={d}>{PROV.map(p => <option key={p}>{p}</option>)}</select></div>
+  const provSel = (d = '') => prov ? null : <div><label>Province</label><select name="prov" defaultValue={d}>{d && !PROV.includes(d) && <option>{d}</option>}{PROV.map(p => <option key={p}>{p}</option>)}</select></div>
   // ---- congregants ----
   const memberFields = (m = {}) => {
     const d = k => m[k] ?? ''
@@ -52,7 +53,7 @@ export default function Admin() {
       <div><label>Gender</label><select name="gender" defaultValue={d('gender')}><option></option><option>Male</option><option>Female</option></select></div>
       <F l="Date of birth" name="dob" type="date" defaultValue={d('dob')} /><F l="Address" name="addr" defaultValue={d('addr')} />
       <F l="Assembly *" name="asm" list="asms" required defaultValue={d('asm')} />{provSel(m.prov || provOf(m.asm) || PROV[0])}
-      <div><label>Status</label><select name="status" defaultValue={m.status || 'Member'}><option>Member</option><option>Visitor</option><option>New Convert</option><option>Inactive</option></select></div>
+      <div><label>Status</label><select name="status" defaultValue={m.status || 'Member'}><option>{NEW_REG}</option><option>Member</option><option>Visitor</option><option>New Convert</option><option>Inactive</option></select></div>
       <F l="Ministry" name="ministry" defaultValue={d('ministry')} /><div><label>Baptised?</label><select name="baptised" defaultValue={m.baptised ? 'Yes' : 'No'}><option>No</option><option>Yes</option></select></div>
       <F l="Next of kin" name="kin" defaultValue={d('kin')} /><F l="Notes" name="notes" defaultValue={d('notes')} />
     </div>
@@ -233,7 +234,8 @@ export default function Admin() {
   if (!me) return <AdminLogin onDone={load} />
   const signOut = <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button>
   const assemblies = [...new Set([...(prov ? ASSEMBLIES[prov] || [] : Object.values(ASSEMBLIES).flat()), ...members.map(m => m.asm).filter(Boolean)])].sort()
-  const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm}`.toLowerCase().includes(q.toLowerCase()))
+  const newRegs = members.filter(m => m.status === NEW_REG).length
+  const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm} ${m.status}`.toLowerCase().includes(q.toLowerCase()))
   const aMembers = asmSel ? members.filter(m => sameAsm(m.asm, asmSel)) : []
   const aLeaders = asmSel ? team.filter(x => sameAsm(x.asm, asmSel)).sort((a, c) => ORD(a.role) - ORD(c.role)) : []
   return (
@@ -243,7 +245,7 @@ export default function Admin() {
       <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <a href="/admin/set-password">Change password</a> · {signOut} <b>{msg}</b></p>
       {me.role === 'super' && <div className="dash-switch"><b>National admin dashboard</b><a href="/admin/messages">Anonymous messages{newNotes > 0 && <span className="badge">{newNotes} new</span>}</a></div>}
       <nav className="admin-menu">{SECTIONS.filter(([, , sup]) => !sup || me.role === 'super').map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
-      <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
+      <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length], ['New registrations', newRegs]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
 
       {me.role === 'super' && <>
         <h2 id="content">Website content</h2>
@@ -320,6 +322,7 @@ export default function Admin() {
       <h2 id="add-congregant">Add congregant</h2>
       <form className="card" onSubmit={e => saveMember(e)}>{memberFields()}<button className="btn">Save congregant</button></form>
       <h2 id="congregants">All congregants</h2>
+      {newRegs > 0 && <button className="btn g" style={{ marginBottom: 10 }} onClick={() => setQ(NEW_REG)}>Show new registrations ({newRegs})</button>}
       <input placeholder="Search name, phone, assembly…" value={q} onChange={e => setQ(e.target.value)} />
       {memberEditor('all')}
       {memberTable(list, 'all')}
