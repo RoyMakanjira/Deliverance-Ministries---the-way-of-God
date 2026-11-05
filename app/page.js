@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ASSEMBLIES, slug } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
 import Give from '@/components/Give'
+import Partners from '@/components/Partners'
 import Hero from '@/components/Hero'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK, WHATSAPP } from '@/lib/social'
@@ -25,7 +26,7 @@ export default async function Home() {
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
   ])
-  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving')
+  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
   const reports = r.data || [], events = upcoming(e.data, today), team = t.data || []
   const b = reports.filter(x => x.women != null)
@@ -35,7 +36,7 @@ export default async function Home() {
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="#give">Give</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
+      <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
     <Hero hasReports={reports.length > 0} />
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
     <div className="wrap">
@@ -65,6 +66,9 @@ export default async function Home() {
       <h2 id="give">Tithes, Donations &amp; Pledges</h2>
       <p className="mu" style={{ textAlign: 'center', maxWidth: 640, margin: '-10px auto 20px' }}>“Bring ye all the tithes into the storehouse…” — Malachi 3:10. Choose what you are giving and where it should go: the Bishop’s Wallet or any assembly.</p>
       <Give how={how} />
+      <h2 id="partners">{partners.title}</h2>
+      <div className={`about${partners.image_url ? '' : ' solo'}`} style={{ marginBottom: 20 }}>{partners.image_url && <img src={partners.image_url} alt="" />}<div><Paras t={partners.body} /></div></div>
+      <Partners how={how} />
       <h2 id="register">Join us / Register</h2><Register />
     </div>
     <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp, or follow us on Facebook for services, events and news.</p>

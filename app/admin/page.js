@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
-import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
+import { ASSEMBLIES, BISHOP, EVANGELISM, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
@@ -274,17 +274,17 @@ export default function Admin() {
 
       <h2 id="giving">Giving</h2>
       {(() => {
-        const dests = prov ? ASSEMBLIES[prov] : [BISHOP, ...Object.values(ASSEMBLIES).flat()]
+        const dests = prov ? ASSEMBLIES[prov] : [BISHOP, EVANGELISM, ...Object.values(ASSEMBLIES).flat()]
         const rows = gifts.filter(g => (!gf.kind || g.kind === gf.kind) && (!gf.dest || g.dest === gf.dest) && (!gf.status || g.status === gf.status))
         const tot = {}; rows.filter(g => g.status === 'Received' || g.status === 'Fulfilled').forEach(g => { tot[g.currency] = (tot[g.currency] || 0) + +g.amount })
         const owed = {}; rows.filter(g => g.kind === 'Pledge' && g.status === 'Pending').forEach(g => { owed[g.currency] = (owed[g.currency] || 0) + +g.amount })
         const fmt = o => Object.entries(o).map(([c, n]) => `${c} ${n.toFixed(2)}`).join(' · ') || '0'
         const sel = (k, opts, all) => <select value={gf[k]} onChange={e => setGf({ ...gf, [k]: e.target.value })}><option value="">{all}</option>{opts.map(o => <option key={o}>{o}</option>)}</select>
         return <>
-          <div className="form">{sel('kind', ['Tithe', 'Donation', 'Pledge'], 'All types')}{sel('dest', dests, prov ? `All ${prov} assemblies` : 'All destinations')}{sel('status', ['Pending', 'Received', 'Fulfilled', 'Cancelled'], 'Any status')}</div>
+          <div className="form">{sel('kind', ['Tithe', 'Donation', 'Pledge', 'Partnership'], 'All types')}{sel('dest', dests, prov ? `All ${prov} assemblies` : 'All destinations')}{sel('status', ['Pending', 'Received', 'Fulfilled', 'Cancelled'], 'Any status')}</div>
           <div className="grid stats"><div className="stat"><b>{rows.length}</b>Entries</div><div className="stat"><b style={{ fontSize: 20 }}>{fmt(tot)}</b>Received</div><div className="stat"><b style={{ fontSize: 20 }}>{fmt(owed)}</b>Pledged, not yet paid</div></div>
           <div className="scroll" style={{ marginTop: 10 }}><table><thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Phone</th><th>To</th><th>Amount</th><th>Method / ref</th><th>Status</th><th></th></tr></thead>
-            <tbody>{rows.map(g => <tr key={g.id}><td>{g.created_at?.slice(0, 10)}</td><td>{g.kind}{g.due && <div className="mu">due {g.due}</div>}</td><td>{g.name}<div className="mu">{g.who}</div></td>
+            <tbody>{rows.map(g => <tr key={g.id}><td>{g.created_at?.slice(0, 10)}</td><td>{g.kind}{g.frequency && <div className="mu">{g.frequency}</div>}{g.due && <div className="mu">due {g.due}</div>}</td><td>{g.name}<div className="mu">{g.who}</div></td>
               <td>{g.phone ? <a href={`tel:${g.phone}`}>{g.phone}</a> : '—'}</td><td>{g.dest}</td><td><b>{g.currency} {(+g.amount).toFixed(2)}</b></td>
               <td>{[g.method, g.ref].filter(Boolean).join(' · ') || '—'}{g.note && <div className="mu" style={{ whiteSpace: 'normal', maxWidth: 220 }}>{g.note}</div>}</td>
               <td><select value={g.status} onChange={e => setGiftStatus(g, e.target.value)} style={{ width: 'auto' }}>{['Pending', 'Received', 'Fulfilled', 'Cancelled'].map(s => <option key={s}>{s}</option>)}</select></td>

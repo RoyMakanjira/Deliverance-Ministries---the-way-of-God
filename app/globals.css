@@ -129,10 +129,19 @@ a.ministry:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.1
 .admin-menu{position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--bd)}
 .admin-menu a{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--bd);background:var(--card);color:var(--blue);text-decoration:none;font-size:14px;font-weight:600}
 .admin-menu a:hover{background:var(--btn);color:#fff;border-color:var(--btn)}
-h2[id]{scroll-margin-top:64px}
+h2[id]{scroll-margin-top:140px}
 /* picture sections on a ministry page */
 .grid.pics{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 .pic{padding:0;overflow:hidden}.pic>div{padding:12px 14px 14px}.pic p{margin:4px 0 0}
 .pic a{display:block;aspect-ratio:4/3;background:var(--navy)}.pic a.tall{aspect-ratio:4/5}
 .pic img{display:block;width:100%;height:100%;object-fit:cover}.pic a.tall img{object-fit:contain}
 @media(max-width:700px){.grid.pics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* navigation bar: every link is a button */
+header nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+header nav a{margin:0;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);font-size:12px;letter-spacing:.8px;white-space:nowrap;transition:background-color .2s,color .2s}
+header nav a:hover,header nav a.on:hover{background:#fff;border-color:#fff;color:var(--navy)}
+header nav a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+header nav a.on{background:var(--red);border-color:var(--red)}
+:root[data-theme="dark"] header nav a.on{background:#c8202b;border-color:#c8202b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) header nav a.on{background:#c8202b;border-color:#c8202b}}
+@media(max-width:700px){header nav{flex-wrap:nowrap;justify-content:flex-start;gap:6px}header nav a{padding:7px 12px}}
