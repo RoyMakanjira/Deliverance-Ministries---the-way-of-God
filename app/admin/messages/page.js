@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase as db } from '@/lib/supabase'
 import AdminLogin from '@/components/AdminLogin'
+import AdminBar from '@/components/AdminBar'
 const MIN = { men: "Men's", women: "Women's", youth: 'Youth' }, ST = ['New', 'Read', 'Being handled', 'Resolved']
 // Anonymous messages dashboard: the national admin sees every ministry, a ministry leader only their own (enforced by RLS)
 export default function Messages() {
@@ -25,16 +26,19 @@ export default function Messages() {
   async function del(n) { if (confirm('Delete this message?')) { await db.from('feedback').delete().eq('id', n.id); setNotes(notes.filter(x => x.id !== n.id)) } }
   if (!ready) return <p style={{ padding: 20 }}>Loading…</p>
   if (!me) return <AdminLogin title="Anonymous messages — sign in" onDone={load} />
-  const signOut = <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button>
+  const signOut = async () => { await db.auth.signOut(); setMe(null) }
   const sup = me.role === 'super', mine = me.role === 'ministry'
   if (!sup && !mine) return (
-    <div className="wrap" style={{ paddingTop: 20 }}><p><a href="/admin">← Admin dashboard</a> · {signOut}</p>
+    <div className="wrap" style={{ paddingTop: 20 }}><p><a className="btn g" href="/admin">← Admin dashboard</a><button className="btn g" onClick={signOut}>Sign out</button></p>
       <p className="mu">The anonymous messages dashboard is for the national admin and the ministry leaders.</p></div>
   )
   const rows = notes.filter(n => (!nf.ministry || n.ministry === nf.ministry) && (!nf.status || n.status === nf.status))
-  return (
+  return (<>
+    <AdminBar title={sup ? 'National admin' : `${MIN[me.ministry]} Ministry leader`} onSignOut={signOut}>
+      {sup && <a href="/admin">Dashboard</a>}<a className="on" href="/admin/messages">Anonymous messages</a>
+    </AdminBar>
     <div className="wrap" style={{ paddingTop: 20 }}>
-      <p><a href="/">← Home</a>{sup && <> · <a href="/admin">National admin dashboard</a></>} · {sup ? 'National admin' : `${MIN[me.ministry]} Ministry leader`} · <a href="/admin/set-password">Change password</a> · {signOut} <b>{msg}</b></p>
+      {msg && <p><b>{msg}</b></p>}
       <h2 style={{ marginTop: 10 }}>{mine ? `${MIN[me.ministry]} Ministry — anonymous messages` : 'Anonymous messages'}</h2>
       <p className="mu" style={{ textAlign: 'center' }}>{mine ? <>Sent from the <a href={`/ministry/${me.ministry}`}>{MIN[me.ministry]} Ministry page</a>.</> : "Sent from the Men's, Women's and Youth ministry pages."} The sender's name is never collected. Mark each message as you deal with it{mine && ' — the national admin can see the status too'}.</p>
       <div className="grid stats">{['New', 'Being handled', 'Resolved'].map(l => <div className="stat" key={l}><b>{notes.filter(n => n.status === l).length}</b>{l}</div>)}</div>
@@ -48,5 +52,5 @@ export default function Messages() {
       </div>)}
       {!rows.length && <p className="mu">No messages yet.</p>}
     </div>
-  )
+  </>)
 }

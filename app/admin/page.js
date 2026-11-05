@@ -4,6 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, BISHOP, EVANGELISM, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
+import AdminBar from '@/components/AdminBar'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
 import { withDefaults, MINISTRIES, NO_PIC, TEXT_ONLY, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
@@ -233,19 +234,21 @@ export default function Admin() {
   }
   if (!ready) return <p style={{ padding: 20 }}>Loading…</p>
   if (!me) return <AdminLogin onDone={load} />
-  const signOut = <button className="btn g" onClick={async () => { await db.auth.signOut(); setMe(null) }}>Sign out</button>
+  const signOut = async () => { await db.auth.signOut(); setMe(null) }
   const assemblies = [...new Set([...(prov ? ASSEMBLIES[prov] || [] : Object.values(ASSEMBLIES).flat()), ...members.map(m => m.asm).filter(Boolean)])].sort()
   const newRegs = members.filter(m => m.status === NEW_REG).length
   const list = members.filter(m => !q || `${m.name} ${m.phone} ${m.asm} ${m.status}`.toLowerCase().includes(q.toLowerCase()))
   const aMembers = asmSel ? members.filter(m => sameAsm(m.asm, asmSel)) : []
   const aLeaders = asmSel ? team.filter(x => sameAsm(x.asm, asmSel)).sort((a, c) => ORD(a.role) - ORD(c.role)) : []
-  return (
+  return (<>
+    <AdminBar title={prov ? `${prov} admin` : 'National admin'} onSignOut={signOut}
+      menu={SECTIONS.filter(([, , sup]) => !sup || me.role === 'super').map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}>
+      {me.role === 'super' && <><a className="on" href="/admin">Dashboard</a><a href="/admin/messages">Anonymous messages{newNotes > 0 && <span className="badge">{newNotes} new</span>}</a></>}
+    </AdminBar>
     <div className="wrap" style={{ paddingTop: 20 }}>
       <datalist id="asms">{assemblies.map(a => <option key={a} value={a} />)}</datalist>
       <datalist id="roles">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
-      <p><a href="/">← Home</a> · {prov ? `${prov} admin` : 'National admin'} · <a href="/admin/set-password">Change password</a> · {signOut} <b>{msg}</b></p>
-      {me.role === 'super' && <div className="dash-switch"><b>National admin dashboard</b><a href="/admin/messages">Anonymous messages{newNotes > 0 && <span className="badge">{newNotes} new</span>}</a></div>}
-      <nav className="admin-menu">{SECTIONS.filter(([, , sup]) => !sup || me.role === 'super').map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
+      {msg && <p><b>{msg}</b></p>}
       <div className="grid stats">{[['Congregants', members.length], ['Members', members.filter(m => m.status === 'Member').length], ['Visitors', members.filter(m => m.status === 'Visitor').length], ['New registrations', newRegs]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>
 
       {me.role === 'super' && <>
@@ -371,7 +374,7 @@ export default function Admin() {
             <label className="btn g" style={{ opacity: busy ? .6 : 1 }}>{busy ? 'Uploading…' : ev.media_url ? 'Replace poster / video' : '+ Add poster / video'}
               <input type="file" accept="image/*,video/*" hidden disabled={busy} onChange={e => { setEventMedia(ev, e.target.files[0]); e.target.value = '' }} /></label>
             {ev.media_url && <button className="btn g" onClick={() => removeEventMedia(ev)}>Remove {ev.media_type === 'video' ? 'video' : 'poster'}</button>}
-            <button className="btn g" style={{ color: 'var(--red)' }} onClick={() => delEvent(ev)}>Delete event</button>
+            <button className="btn g del" onClick={() => delEvent(ev)}>Delete event</button>
           </div>
           {open === ev.id && <>
             <p><b>Present {n('Present')}</b> · Absent {n('Absent')} · Not marked {ppl.length - n('Present') - n('Absent')}</p>
@@ -395,5 +398,5 @@ export default function Admin() {
             <td><button className="btn g" onClick={() => { setEditT({ x, at: 'all' }); goTo('edit-t-all') }}>Edit</button><button className="btn g" onClick={() => delTeam(x)}>Remove</button></td></tr>)}</tbody></table></div>
       </>}
     </div>
-  )
+  </>)
 }
