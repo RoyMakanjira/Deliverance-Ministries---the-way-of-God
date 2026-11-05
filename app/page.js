@@ -10,7 +10,7 @@ import Give from '@/components/Give'
 import Partners from '@/components/Partners'
 import Hero from '@/components/Hero'
 import { FbButton } from '@/components/Facebook'
-import { FACEBOOK, WHATSAPP } from '@/lib/social'
+import { FACEBOOK, WHATSAPP, EVANGELISM_PHONE, EVANGELISM_TEL, EVANGELISM_WHATSAPP } from '@/lib/social'
 export const revalidate = 60
 const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
@@ -68,6 +68,7 @@ export default async function Home() {
       <Give how={how} />
       <h2 id="partners">{partners.title}</h2>
       <div className={`about${partners.image_url ? '' : ' solo'}`} style={{ marginBottom: 20 }}>{partners.image_url && <img src={partners.image_url} alt="" />}<div><Paras t={partners.body} /></div></div>
+      <p style={{ textAlign: 'center', margin: '0 0 20px' }}>Speak to the evangelism team: <b>{EVANGELISM_PHONE}</b><br /><a className="btn" href={EVANGELISM_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a> <a className="btn g" href={`tel:${EVANGELISM_TEL}`}>Call</a></p>
       <Partners how={how} />
       <h2 id="register">Join us / Register</h2><Register />
     </div>
