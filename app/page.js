@@ -26,7 +26,7 @@ export default async function Home() {
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
   ])
-  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners')
+  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners'), partnerPay = sections.find(s => s.key === 'partner-pay')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
   const reports = r.data || [], events = upcoming(e.data, today), team = t.data || []
   const b = reports.filter(x => x.women != null)
@@ -69,7 +69,7 @@ export default async function Home() {
       <h2 id="partners">{partners.title}</h2>
       <div className={`about${partners.image_url ? '' : ' solo'}`} style={{ marginBottom: 20 }}>{partners.image_url && <img src={partners.image_url} alt="" />}<div><Paras t={partners.body} /></div></div>
       <p style={{ textAlign: 'center', margin: '0 0 20px' }}>Speak to the evangelism team: <b>{EVANGELISM_PHONE}</b><br /><a className="btn" href={EVANGELISM_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a> <a className="btn g" href={`tel:${EVANGELISM_TEL}`}>Call</a></p>
-      <Partners how={how} />
+      <Partners how={partnerPay} />
       <h2 id="register">Join us / Register</h2><Register />
     </div>
     <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp, or follow us on Facebook for services, events and news.</p>

@@ -5,7 +5,7 @@ import { ASSEMBLIES, BISHOP, EVANGELISM, PROV, provOf, sameAsm, slug } from '@/l
 import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
-import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
+import { withDefaults, MINISTRIES, NO_PIC, TEXT_ONLY, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
 const NEW_REG = 'New Registration' // set by the public Join us / Register form
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Advisor', 'Assembly Pastor']
@@ -254,12 +254,12 @@ export default function Admin() {
         {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>
           <form onSubmit={e => saveContent(e, s)}>
             <div className="form"><F l="Heading *" name="title" required defaultValue={s.title} />{MINISTRIES.includes(s.key) && <F l="Led by (optional)" name="leader" defaultValue={s.leader ?? ''} />}
-              {s.key !== 'giving' && <F l={s.image_url ? 'Upload a new picture' : 'Upload a picture (optional)'} name="photo" type="file" accept="image/*" />}
-              {s.key !== 'giving' && <div><label>Picture</label><select name="pic" defaultValue="keep">
+              {!TEXT_ONLY.includes(s.key) && <F l={s.image_url ? 'Upload a new picture' : 'Upload a picture (optional)'} name="photo" type="file" accept="image/*" />}
+              {!TEXT_ONLY.includes(s.key) && <div><label>Picture</label><select name="pic" defaultValue="keep">
                 <option value="keep">{s.image_url ? 'Keep the current picture' : 'No picture (keep it that way)'}</option>
                 {defaultPic(s.key) && s.image_url !== defaultPic(s.key) && <option value="default">Use the default illustration</option>}
                 {s.image_url && <option value="none">Remove the picture — show no picture</option>}</select></div>}</div>
-            {s.key !== 'giving' && <div style={{ marginBottom: 10 }}>{s.image_url ? <img src={s.image_url} alt="" style={{ width: 120, height: 75, objectFit: 'cover', borderRadius: 8 }} /> : <span className="mu">Currently showing no picture.</span>}</div>}
+            {!TEXT_ONLY.includes(s.key) && <div style={{ marginBottom: 10 }}>{s.image_url ? <img src={s.image_url} alt="" style={{ width: 120, height: 75, objectFit: 'cover', borderRadius: 8 }} /> : <span className="mu">Currently showing no picture.</span>}</div>}
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
