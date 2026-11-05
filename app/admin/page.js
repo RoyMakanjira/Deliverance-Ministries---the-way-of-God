@@ -4,6 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, BISHOP, PROV, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
+import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
 import { withDefaults, MINISTRIES, NO_PIC, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
 const NEW_REG = 'New Registration' // set by the public Join us / Register form
@@ -17,7 +18,7 @@ const grp = m => {
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 // jump menu at the top of the dashboard; true = national admin only
-const SECTIONS = [['content', 'Website content', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
+const SECTIONS = [['content', 'Website content', true], ['youth-page', 'Youth page', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -262,6 +263,12 @@ export default function Admin() {
             <label>Text</label><textarea name="body" rows="7" defaultValue={s.body ?? ''} />
             <button className="btn" disabled={busy}>{busy ? 'Saving…' : `Save ${s.title}`}</button>
           </form></details>)}
+      </>}
+
+      {me.role === 'super' && <>
+        <h2 id="youth-page">Youth Ministry page</h2>
+        <p className="mu" style={{ textAlign: 'center' }}>Add pictures for the <a href="/ministry/youth">Youth Ministry page</a>. Click a section's name below to open it.</p>
+        <MinistryItemsAdmin ministry="youth" upload={uploadMedia} path={photoPath} />
       </>}
 
       <h2 id="giving">Giving</h2>
