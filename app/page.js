@@ -22,12 +22,13 @@ const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advis
 const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
-  const [r, e, t, c, ph] = await Promise.all([
+  const [r, e, t, c, ph, ai] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
     db.from('events').select('*').gte('date', since(today)).order('date'),
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
     db.from('assembly_photos').select('asm,image_url').eq('kind', 'church').order('created_at'),
+    db.from('assembly_info').select('asm,cover_url').not('cover_url', 'is', null),
   ])
   const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners'), partnerPay = sections.find(s => s.key === 'partner-pay')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
@@ -39,7 +40,7 @@ export default async function Home() {
   const top = team.filter(x => ti(x) < 0 && x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
   const asmCards = Object.entries(ASSEMBLIES).flatMap(([p, a]) => a.map(asm => ({ asm, prov: p,
-    cover: (ph.data || []).find(x => x.asm === asm)?.image_url, pastor: pastors.find(x => sameAsm(x.asm, asm))?.name })))
+    cover: (ai.data || []).find(x => x.asm === asm)?.cover_url || (ph.data || []).find(x => x.asm === asm)?.image_url, pastor: pastors.find(x => sameAsm(x.asm, asm))?.name })))
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
       <nav>{live && <a className="on" href="#live">🔴 Watch Live</a>}<a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
