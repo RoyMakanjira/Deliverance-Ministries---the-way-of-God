@@ -115,7 +115,14 @@ img{max-width:100%}
 .marquee.events .marquee-track>div{display:flex;width:300px}.marquee.events .event{width:100%}
 @media(max-width:700px){.marquee.events .marquee-track>div{width:260px}}
 .event-body{padding:14px 16px 16px}
-.event-when{font-weight:600;color:var(--red);margin:2px 0 4px}
+.event-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}.event-head h3{margin:0;line-height:1.25}
+.date-tile{flex:none;display:flex;flex-direction:column;align-items:center;width:58px;border-radius:10px;overflow:hidden;background:var(--card,#fff);border:1px solid var(--bd);box-shadow:0 2px 6px rgba(0,0,0,.12);text-align:center;line-height:1}
+.dt-mon{align-self:stretch;background:#c8202b;color:#fff;font-size:.7rem;font-weight:800;letter-spacing:1.5px;padding:4px 0}
+.dt-day{font-size:1.55rem;font-weight:800;padding:5px 0 1px;color:inherit}.dt-day small{font-size:.8rem;font-weight:700}
+.dt-wd{font-size:.68rem;font-weight:600;opacity:.65;padding-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.event-when{display:flex;flex-wrap:wrap;gap:4px 14px;font-weight:600;color:var(--red);margin:2px 0 4px;font-size:.92rem}
+.event-when span{display:inline-flex;align-items:center;gap:6px}
+.ico{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 /* ministry cards are links to their pages */
 a.ministry{display:block;color:var(--tx);text-decoration:none;transition:transform .2s,box-shadow .2s}
 a.ministry:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.12)}
