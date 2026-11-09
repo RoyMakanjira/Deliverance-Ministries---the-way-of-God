@@ -149,3 +149,14 @@ header .admin-menu{width:100%;justify-content:flex-start;padding-top:8px;border-
 .btn:disabled{opacity:.6;cursor:not-allowed}
 td .btn{padding:6px 12px;font-size:13px;margin:2px}
 @media(max-width:700px){header nav button{padding:7px 12px}}
+/* assemblies: moving strip of cards on the homepage, location box on an assembly page */
+.marquee.asms .marquee-track>div{display:flex;width:240px}
+.asm-card{display:flex;flex-direction:column;width:100%;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--bd);border-top:5px solid var(--blue);color:var(--tx);text-decoration:none;transition:transform .2s}
+.asm-card:hover{transform:translateY(-3px)}
+.asm-card>img,.asm-ph{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.asm-ph{display:grid;place-items:center;background:var(--navy)}.asm-ph img{width:72px;height:72px;border-radius:50%;background:#fff;object-fit:contain}
+.asm-body{display:flex;flex-direction:column;gap:2px;padding:12px 14px 14px}.asm-body small{color:var(--mu)}.asm-body .more{font-weight:600;font-size:14px;color:var(--blue);margin-top:4px}
+@media(max-width:700px){.marquee.asms .marquee-track>div{width:200px}}
+.asm-loc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px;align-items:center}.asm-loc p{margin:0 0 10px}
+.asm-loc iframe{width:100%;aspect-ratio:16/10;border:0;border-radius:12px}
+@media(max-width:700px){.asm-loc{grid-template-columns:1fr}}

@@ -6,6 +6,7 @@ import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import AdminBar from '@/components/AdminBar'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
+import AssemblyInfoAdmin from '@/components/AssemblyInfoAdmin'
 import { withDefaults, MINISTRIES, NO_PIC, TEXT_ONLY, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
 const NEW_REG = 'New Registration' // set by the public Join us / Register form
@@ -314,6 +315,7 @@ export default function Admin() {
         {asmSel && <p className="mu" style={{ marginBottom: 0 }}>{provOf(asmSel)} · {aLeaders.length} leaders · {aMembers.length} congregants · <a href={`/assembly/${slug(asmSel)}`} target="_blank" rel="noopener noreferrer">View public page ↗</a></p>}
       </div>
       {asmSel && <>
+        <AssemblyInfoAdmin key={asmSel} asm={asmSel} prov={provOf(asmSel)} upload={uploadMedia} path={photoPath} />
         <h3 style={{ marginTop: 28 }}>Leaders of {asmSel}</h3>
         {teamEditor('asm')}
         {aLeaders.length ? <div className="grid people">{aLeaders.map(x => <div key={x.id}><Person x={x} />

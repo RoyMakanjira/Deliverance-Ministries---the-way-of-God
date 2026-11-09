@@ -2,9 +2,10 @@ import { supabase as db } from '@/lib/supabase'
 import Register from '@/components/Register'
 import TeamMarquee from '@/components/TeamMarquee'
 import EventMarquee from '@/components/EventMarquee'
+import AssemblyMarquee from '@/components/AssemblyMarquee'
 import { since, upcoming } from '@/lib/dates'
 import Link from 'next/link'
-import { ASSEMBLIES, slug } from '@/lib/assemblies'
+import { ASSEMBLIES, slug, sameAsm } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
 import Give from '@/components/Give'
 import Partners from '@/components/Partners'
@@ -20,11 +21,12 @@ const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advis
 const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
-  const [r, e, t, c] = await Promise.all([
+  const [r, e, t, c, ph] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
     db.from('events').select('*').gte('date', since(today)).order('date'),
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
+    db.from('assembly_photos').select('asm,image_url').eq('kind', 'church').order('created_at'),
   ])
   const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners'), partnerPay = sections.find(s => s.key === 'partner-pay')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
@@ -34,6 +36,8 @@ export default async function Home() {
   const heads = team.filter(x => ti(x) >= 0).sort((a, c) => ti(a) - ti(c))
   const top = team.filter(x => ti(x) < 0 && x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))
   const pastors = team.filter(x => x.role === 'Assembly Pastor')
+  const asmCards = Object.entries(ASSEMBLIES).flatMap(([p, a]) => a.map(asm => ({ asm, prov: p,
+    cover: (ph.data || []).find(x => x.asm === asm)?.image_url, pastor: pastors.find(x => sameAsm(x.asm, asm))?.name })))
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
       <nav><a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
@@ -47,6 +51,8 @@ export default async function Home() {
         <h3>{m.title}</h3>{m.leader && <div className="mu">Led by {m.leader}</div>}<Paras t={m.body} />
         <span className="more">{m.key === 'children' ? 'Open page →' : 'Open page & send an anonymous message →'}</span></Link>)}</div>
       <h2 id="assemblies">Our Assemblies</h2>
+      <AssemblyMarquee assemblies={asmCards} />
+      <h3 style={{ margin: '28px 0 12px', textAlign: 'center' }}>Find an assembly</h3>
       <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
         <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
       {reports.length > 0 && <>

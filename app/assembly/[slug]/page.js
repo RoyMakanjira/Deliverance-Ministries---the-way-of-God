@@ -18,20 +18,35 @@ export default async function Assembly({ params }) {
   const asm = fromSlug(params.slug)
   if (!asm) notFound()
   const prov = provOf(asm), today = new Date().toISOString().slice(0, 10)
-  const [t, r, e] = await Promise.all([
+  const [t, r, e, inf, ph] = await Promise.all([
     db.from('team').select('*').order('name'),
     db.from('reports').select('*').eq('prov', prov).order('date', { ascending: false }).limit(50),
     db.from('events').select('*').gte('date', since(today)).order('date'),
+    db.from('assembly_info').select('*').eq('asm', asm).maybeSingle(),
+    db.from('assembly_photos').select('*').eq('asm', asm).order('created_at'),
   ])
   const leaders = (t.data || []).filter(x => sameAsm(x.asm, asm)).sort((a, c) => oi(a.role) - oi(c.role))
   const reports = (r.data || []).filter(x => sameAsm(x.asm, asm)).slice(0, 6)
   const events = upcoming(e.data, today).filter(x => x.asms?.length ? x.asms.some(a => sameAsm(a, asm)) : !x.prov || x.prov === prov)
   const others = ASSEMBLIES[prov].filter(a => a !== asm)
+  const info = inf.data || {}, photos = ph.data || []
+  const pastor = leaders.find(x => x.role === 'Assembly Pastor')
+  const map = info.map_link || (info.address && `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.address)}`)
   return (<>
     <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
-      <nav><Link href="/#assemblies">All assemblies</Link><a href="#leaders">Leaders</a><a href="#congregants">Congregants</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
-    <section className="hero small"><p>{prov}</p><h1>{asm}</h1><p>Assembly</p></section>
+      <nav><Link href="/#assemblies">All assemblies</Link><a href="#location">Location</a><a href="#church">Our Church</a><a href="#sunday">A Normal Sunday</a><a href="#leaders">Leaders</a><a href="#congregants">Congregants</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
+    <section className="hero small"><p>{prov}</p><h1>{asm}</h1><p>Assembly{pastor && ` · Pastor ${pastor.name}`}</p></section>
     <div className="wrap">
+      <h2 id="location">Where we are</h2>
+      {info.address || info.service_time ? <div className="card asm-loc">
+        <div>{info.address && <p><b>📍 {info.address}</b></p>}{info.service_time && <p>⛪ {info.service_time}</p>}{pastor && <p>🙏 Pastor {pastor.name}</p>}
+          {map && <a className="btn" href={map} target="_blank" rel="noopener noreferrer">Open in Google Maps</a>}</div>
+        {info.address && <iframe title={`Map of ${asm}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(info.address)}&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />}
+      </div> : <p className="mu" style={{ textAlign: 'center' }}>Location coming soon.</p>}
+      {[['church', 'Our Church'], ['sunday', 'A Normal Sunday']].map(([k, title]) => { const rows = photos.filter(p => p.kind === k)
+        return <div key={k}><h2 id={k}>{title}</h2>{rows.length ? <div className="grid pics">{rows.map(x => <div className="card pic" key={x.id}>
+          <a href={x.image_url} target="_blank" rel="noopener noreferrer" title="Open the full picture"><img src={x.image_url} alt={x.caption || `${title} at ${asm}`} loading="lazy" /></a>
+          {x.caption && <div><p className="mu">{x.caption}</p></div>}</div>)}</div> : <p className="mu" style={{ textAlign: 'center' }}>Pictures coming soon.</p>}</div> })}
       <h2 id="leaders">Leaders</h2>
       {leaders.length ? <div className="grid people">{leaders.map(x => <Person key={x.id} x={x} />)}</div>
         : <p className="mu" style={{ textAlign: 'center' }}>No leaders listed for {asm} yet. Admins can add them under Team, with the assembly set to “{asm}”.</p>}
