@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
-import Congregants from '@/components/Congregants'
 import EventMarquee from '@/components/EventMarquee'
 import { since, upcoming } from '@/lib/dates'
 import { FbButton } from '@/components/Facebook'
@@ -34,7 +33,7 @@ export default async function Assembly({ params }) {
   const map = info.map_link || (info.address && `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.address)}`)
   return (<>
     <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
-      <nav><Link href="/#assemblies">All assemblies</Link><a href="#location">Location</a><a href="#church">Our Church</a><a href="#sunday">A Normal Sunday</a><a href="#leaders">Leaders</a><a href="#congregants">Congregants</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
+      <nav><Link href="/#assemblies">All assemblies</Link><a href="#location">Location</a><a href="#church">Our Church</a><a href="#sunday">A Normal Sunday</a><a href="#leaders">Leaders</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
     <section className="hero small"><p>{prov}</p><h1>{asm}</h1><p>Assembly{pastor && ` · Pastor ${pastor.name}`}</p></section>
     <div className="wrap">
       <h2 id="location">Where we are</h2>
@@ -50,8 +49,6 @@ export default async function Assembly({ params }) {
       <h2 id="leaders">Leaders</h2>
       {leaders.length ? <div className="grid people">{leaders.map(x => <Person key={x.id} x={x} />)}</div>
         : <p className="mu" style={{ textAlign: 'center' }}>No leaders listed for {asm} yet. Admins can add them under Team, with the assembly set to “{asm}”.</p>}
-      <h2 id="congregants">Congregants</h2>
-      <Congregants asm={asm} prov={prov} />
       <h2>Upcoming Events</h2>
       {events.length > 0 ? <EventMarquee events={events} showProv={false} /> : <p className="mu">No upcoming events.</p>}
       <h2>Recent Reports</h2>
