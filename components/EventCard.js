@@ -14,7 +14,7 @@ export default function EventCard({ x, showProv = true, copy }) {
         : <a className="event-poster" href={x.media_url} target="_blank" rel="noopener noreferrer" title="Open the full poster" tabIndex={tab} style={{ '--poster': `url("${x.media_url}")` }}>
           <img src={x.media_url} alt={`${x.title} poster`} loading="lazy" /></a>)}
       <div className="event-body"><div className="event-head"><DateTile date={x.date} end={x.end_date} /><h3>{x.title}</h3></div>
-        {x.time && <div className="event-when"><span><ClockIcon />{x.time}</span></div>}
+        {x.time && <div className="time-pill"><span className="tp-ico"><ClockIcon /></span><span className="tp-txt"><small>Starts</small>{x.time}</span></div>}
         <div className="mu">{[x.venue, showProv && x.prov].filter(Boolean).join(' · ')}</div>
         {x.asms?.length > 0 && <div className="mu" title={x.asms.join(', ')}>Assemblies: {asmList(x.asms)}</div>}</div>
     </div>

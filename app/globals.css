@@ -176,3 +176,7 @@ td .btn{padding:6px 12px;font-size:13px;margin:2px}
 @media(prefers-reduced-motion:reduce){.live-dot{animation:none}}
 .live-box{max-width:900px;margin:0 auto;text-align:center}.live-tag{font-weight:800;color:var(--red);display:flex;justify-content:center;align-items:center;gap:8px}
 .live-frame{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:16px;background:#000;margin-bottom:10px}
+/* time badge beside the calendar tile style */
+.time-pill{display:inline-flex;align-items:center;gap:10px;margin:2px 0 8px;padding:4px 14px 4px 4px;border-radius:999px;background:var(--card);border:1px solid var(--bd);box-shadow:0 2px 6px rgba(0,0,0,.12);line-height:1}
+.tp-ico{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#c8202b;color:#fff}.tp-ico .ico{width:18px;height:18px}
+.tp-txt{display:flex;flex-direction:column;gap:3px;font-weight:800;font-size:1rem}.tp-txt small{font-size:.62rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.6}
