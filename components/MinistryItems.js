@@ -1,11 +1,10 @@
 import Person from '@/components/Person'
-import { fmtDate } from '@/lib/dates'
-import DateTile, { CalIcon } from '@/components/DateTile'
+import DateTile from '@/components/DateTile'
 import EventMarquee from '@/components/EventMarquee'
 // Picture cards on a ministry page; a recent event with several pictures is one card per picture
 const Cards = ({ rows, tall }) => <div className="grid pics">{rows.map(x => <div className="card pic" key={x.id}>
   {x.image_url && <a className={tall ? 'tall' : ''} href={x.image_url} target="_blank" rel="noopener noreferrer" title="Open the full picture"><img src={x.image_url} alt={x.title} loading="lazy" /></a>}
-  <div><div className="event-head"><DateTile date={x.date} /><h3>{x.title}</h3></div>{x.date && <div className="event-when"><span><CalIcon />{fmtDate(x.date)}</span></div>}{x.detail && <p className="mu">{x.detail}</p>}</div></div>)}</div>
+  <div><div className="event-head"><DateTile date={x.date} /><h3>{x.title}</h3></div>{x.detail && <p className="mu">{x.detail}</p>}</div></div>)}</div>
 const Soon = () => <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>
 // events: church events tagged with this ministry; a hand-added upcoming card with the same title is not repeated
 export default function MinistryItems({ items, events = [], today }) {
