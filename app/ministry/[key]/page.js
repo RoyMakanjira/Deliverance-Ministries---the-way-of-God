@@ -6,6 +6,7 @@ import Suggestion from '@/components/Suggestion'
 import MinistryItems from '@/components/MinistryItems'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
+import { since, upcoming } from '@/lib/dates'
 export const revalidate = 60
 export const dynamicParams = false
 export const generateStaticParams = () => MINISTRIES.map(key => ({ key }))
@@ -18,7 +19,9 @@ export async function generateMetadata({ params }) {
 }
 export default async function Ministry({ params }) {
   if (!MINISTRIES.includes(params.key)) notFound()
-  const [{ data }, it] = await Promise.all([db.from('content').select('*'), db.from('ministry_items').select('*').eq('ministry', params.key)])
+  const today = new Date().toISOString().slice(0, 10)
+  const [{ data }, it, ev] = await Promise.all([db.from('content').select('*'), db.from('ministry_items').select('*').eq('ministry', params.key),
+    db.from('events').select('*').contains('ministries', [params.key]).gte('date', since(today)).order('date')])
   const all = withDefaults(data), m = all.find(s => s.key === params.key)
   const others = all.filter(s => MINISTRIES.includes(s.key) && s.key !== m.key)
   return (<>
@@ -27,7 +30,7 @@ export default async function Ministry({ params }) {
     <section className="hero small"><p>Ministry</p><h1>{m.title}</h1>{m.leader && <p>Led by {m.leader}</p>}</section>
     <div className="wrap">
       <div className={`about${m.image_url ? '' : ' solo'}`} style={{ marginTop: 48 }}>{m.image_url && <img src={m.image_url} alt="" />}<div><Paras t={m.body} /></div></div>
-      <MinistryItems items={it.data || []} today={new Date().toISOString().slice(0, 10)} />
+      <MinistryItems items={it.data || []} events={upcoming(ev.data, today)} today={today} />
       {ANON.includes(m.key) && <><h2 id="message">Speak to Leadership</h2><Suggestion ministry={m.key} title={m.title} /></>}
       <h2>Other ministries</h2>
       <div className="chips">{others.map(o => <Link key={o.key} href={`/ministry/${o.key}`}>{o.title}</Link>)}</div>

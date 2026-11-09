@@ -9,6 +9,7 @@ import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
 import AssemblyInfoAdmin from '@/components/AssemblyInfoAdmin'
 import { withDefaults, MINISTRIES, NO_PIC, TEXT_ONLY, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
+const MIN_NAMES = { men: "Men's", women: "Women's", youth: 'Youth', children: "Children's" }
 const NEW_REG = 'New Registration' // set by the public Join us / Register form
 const ROLES = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator', 'Advisor', 'Assembly Pastor']
 const ORD = r => (ROLES.indexOf(r) < 0 ? 9 : ROLES.indexOf(r))
@@ -28,7 +29,7 @@ export default function Admin() {
   const [events, setEvents] = useState([]), [selAsm, setSelAsm] = useState(new Set()), [open, setOpen] = useState(null), [marks, setMarks] = useState({})
   const [asmSel, setAsmSel] = useState(''), [editM, setEditM] = useState(null), [editT, setEditT] = useState(null), [busy, setBusy] = useState(false), [content, setContent] = useState(withDefaults([]))
   const [gifts, setGifts] = useState([]), [gf, setGf] = useState({ kind: '', dest: '', status: '' })
-  const [pageMin, setPageMin] = useState('youth'), [newNotes, setNewNotes] = useState(0), [reports, setReports] = useState([])
+  const [evMin, setEvMin] = useState(new Set()), [pageMin, setPageMin] = useState('youth'), [newNotes, setNewNotes] = useState(0), [reports, setReports] = useState([])
   const load = useCallback(async () => {
     const { data: { user } } = await db.auth.getUser()
     if (user) {
@@ -177,10 +178,10 @@ export default function Admin() {
     if (error) throw new Error(error.message.includes('size') ? 'That file is too big. Try a shorter or smaller video (under 50 MB).' : `Upload failed: ${error.message}`)
     return { media_url: db.storage.from('team').getPublicUrl(path).data.publicUrl, media_type: file.type.startsWith('video') ? 'video' : 'image' }
   }
-  const mediaErr = m => m.includes('media_') || m.includes('end_date') ? 'Supabase needs a one-time update first: run supabase/event-media.sql and supabase/event-dates.sql in the Supabase SQL Editor, then try again.' : m
+  const mediaErr = m => m.includes('ministries') ? 'Supabase needs a one-time update first: run supabase/event-ministries.sql in the Supabase SQL Editor, then try again.' : m.includes('media_') || m.includes('end_date') ? 'Supabase needs a one-time update first: run supabase/event-media.sql and supabase/event-dates.sql in the Supabase SQL Editor, then try again.' : m
   async function addEvent(e) {
     e.preventDefault(); const f = new FormData(e.target), file = f.get('media'); f.delete('media')
-    const o = Object.fromEntries(f); o.prov = prov || o.prov; o.asms = [...selAsm]
+    const o = Object.fromEntries(f); o.prov = prov || o.prov; o.asms = [...selAsm]; o.ministries = [...evMin]
     if (!o.end_date || o.end_date === o.date) delete o.end_date
     else if (o.end_date < o.date) { alert('The "To" date must be on or after the "From" date.'); return }
     setBusy(true)
@@ -191,7 +192,13 @@ export default function Admin() {
       if (photoPath(o.media_url)) await db.storage.from('team').remove([photoPath(o.media_url)])
       const m = mediaErr(error.message); alert(m); return setMsg(m)
     }
-    e.target.reset(); setSelAsm(new Set()); setMsg('Event added'); load()
+    e.target.reset(); setSelAsm(new Set()); setEvMin(new Set()); setMsg('Event added'); load()
+  }
+  async function toggleEvMin(ev, k) {
+    const ministries = (ev.ministries || []).includes(k) ? ev.ministries.filter(x => x !== k) : [...(ev.ministries || []), k]
+    const { error } = await db.from('events').update({ ministries }).eq('id', ev.id)
+    if (error) return setMsg(mediaErr(error.message))
+    setEvents(events.map(x => x.id === ev.id ? { ...x, ministries } : x)); setMsg(`${ev.title}: ministries updated`)
   }
   async function setEventMedia(ev, file) {
     if (!file) return
@@ -360,6 +367,9 @@ export default function Admin() {
           {assemblies.map(a => <label key={a} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
             <input type="checkbox" style={{ width: 'auto' }} checked={selAsm.has(a)} onChange={e => { const s = new Set(selAsm); e.target.checked ? s.add(a) : s.delete(a); setSelAsm(s) }} />{a}</label>)}
         </div> : <p className="mu">No assemblies for this province yet.</p>}
+        <label>Which ministries is it for? (none ticked = a general church event, shown on no ministry page)</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '6px 0 10px' }}>{Object.entries(MIN_NAMES).map(([k, l]) => <label key={k} style={{ display: 'flex', gap: 8, padding: 4, color: 'var(--tx)' }}>
+          <input type="checkbox" style={{ width: 'auto' }} checked={evMin.has(k)} onChange={e => { const s = new Set(evMin); e.target.checked ? s.add(k) : s.delete(k); setEvMin(s) }} />{l} Ministry</label>)}</div>
         <button className="btn" disabled={busy}>{busy ? 'Uploading…' : 'Add event'}</button></form>
       <h2 id="events">Events &amp; attendance</h2>
       {events.map(ev => {
@@ -369,7 +379,8 @@ export default function Admin() {
             {ev.media_url && (ev.media_type === 'video' ? <video src={ev.media_url} controls preload="metadata" style={{ width: 200, borderRadius: 8, background: '#000' }} />
               : <img src={ev.media_url} alt="" style={{ width: 120, maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />)}
             <div style={{ flex: 1, minWidth: 200 }}><h3>{ev.title}</h3>
-              <div className="mu">{[eventDates(ev), ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div></div>
+              <div className="mu">{[eventDates(ev), ev.time, ev.venue, ev.prov].filter(Boolean).join(' · ')}<br />Assemblies: {ev.asms?.length ? ev.asms.join(', ') : 'All'}</div>
+              <div className="mu" style={{ marginTop: 6 }}>Shows on ministry pages: {Object.entries(MIN_NAMES).map(([k, l]) => <button key={k} type="button" className={`btn ${(ev.ministries || []).includes(k) ? '' : 'g'}`} style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => toggleEvMin(ev, k)}>{l}</button>)}</div></div>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: 6 }}>
             <button className="btn g" onClick={() => openAtt(ev)}>{open === ev.id ? 'Close' : 'Mark attendance'}</button>
