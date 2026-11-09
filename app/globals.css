@@ -160,3 +160,12 @@ td .btn{padding:6px 12px;font-size:13px;margin:2px}
 .asm-loc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px;align-items:center}.asm-loc p{margin:0 0 10px}
 .asm-loc iframe{width:100%;aspect-ratio:16/10;border:0;border-radius:12px}
 @media(max-width:700px){.asm-loc{grid-template-columns:1fr}}
+/* live stream: red bar on every page, player on the homepage and /live */
+.live-bar{display:flex;justify-content:center;align-items:center;gap:10px;padding:9px 16px;background:#c8202b;color:#fff;font-weight:700;letter-spacing:.5px;text-decoration:none;text-align:center}
+.live-bar:hover{background:#a8141e}
+.live-dot{flex:none;display:inline-block;width:10px;height:10px;border-radius:50%;background:currentColor;animation:live-pulse 1.4s ease-in-out infinite}
+.live-tag .live-dot{color:var(--red)}
+@keyframes live-pulse{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.live-dot{animation:none}}
+.live-box{max-width:900px;margin:0 auto;text-align:center}.live-tag{font-weight:800;color:var(--red);display:flex;justify-content:center;align-items:center;gap:8px}
+.live-frame{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:16px;background:#000;margin-bottom:10px}
