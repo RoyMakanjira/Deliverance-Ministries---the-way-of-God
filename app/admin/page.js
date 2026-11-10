@@ -7,6 +7,7 @@ import AdminLogin from '@/components/AdminLogin'
 import LiveAdmin from '@/components/LiveAdmin'
 import AdminBar from '@/components/AdminBar'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
+import GalleryAdmin from '@/components/GalleryAdmin'
 import AssemblyInfoAdmin from '@/components/AssemblyInfoAdmin'
 import { withDefaults, MINISTRIES, NO_PIC, TEXT_ONLY, defaultPic } from '@/lib/content'
 import { eventDates } from '@/lib/dates'
@@ -22,7 +23,7 @@ const grp = m => {
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 // jump menu at the top of the dashboard; true = national admin only
-const SECTIONS = [['live', 'Live service', true], ['content', 'Website content', true], ['ministry-pages', 'Ministry pages', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
+const SECTIONS = [['live', 'Live service', true], ['content', 'Website content', true], ['ministry-pages', 'Ministry pages', true], ['gallery', 'Church gallery', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -284,6 +285,8 @@ export default function Admin() {
         <p className="mu" style={{ textAlign: 'center' }}>Choose a ministry, then click a section's name to add pictures to its <a href={`/ministry/${pageMin}`}>page</a>.</p>
         <div style={{ maxWidth: 320, margin: '0 auto 12px' }}><select aria-label="Ministry" value={pageMin} onChange={e => setPageMin(e.target.value)}>{content.filter(s => MINISTRIES.includes(s.key)).map(s => <option key={s.key} value={s.key}>{s.title}</option>)}</select></div>
         <MinistryItemsAdmin key={pageMin} ministry={pageMin} upload={uploadMedia} path={photoPath} />
+        <h2 id="gallery">Church gallery</h2>
+        <GalleryAdmin upload={uploadMedia} path={photoPath} />
       </>}
 
       <h2 id="giving">Giving</h2>

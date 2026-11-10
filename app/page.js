@@ -22,14 +22,16 @@ const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advis
 const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
   const today = new Date().toISOString().slice(0, 10)
-  const [r, e, t, c, ph, ai] = await Promise.all([
+  const [r, e, t, c, ph, ai, gal] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
     db.from('events').select('*').gte('date', since(today)).order('date'),
     db.from('team').select('*').order('name'),
     db.from('content').select('*'),
     db.from('assembly_photos').select('asm,image_url').eq('kind', 'church').order('created_at'),
     db.from('assembly_info').select('asm,cover_url').not('cover_url', 'is', null),
+    db.from('gallery').select('id,title,image_url').eq('kind', 'photo').order('created_at', { ascending: false }).limit(6),
   ])
+  const galPics = gal.data || []
   const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners'), partnerPay = sections.find(s => s.key === 'partner-pay')
   const ministries = sections.filter(s => MINISTRIES.includes(s.key))
   const liveRow = (c.data || []).find(x => x.key === 'live' && x.body), live = liveRow && { title: liveRow.title || 'Live service', url: liveRow.body }
@@ -43,7 +45,7 @@ export default async function Home() {
     cover: (ai.data || []).find(x => x.asm === asm)?.cover_url || (ph.data || []).find(x => x.asm === asm)?.image_url, pastor: pastors.find(x => sameAsm(x.asm, asm))?.name })))
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav>{live && <a className="on" href="#live">🔴 Watch Live</a>}<a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
+      <nav>{live && <a className="on" href="#live">🔴 Watch Live</a>}<a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="/gallery">Gallery</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
     <Hero hasReports={reports.length > 0} />
     {live && <div className="wrap" id="live" style={{ paddingTop: 32 }}><LivePlayer live={live} /></div>}
     <div className="band"><blockquote>I am the way, the truth, and the life: no man cometh unto the Father, but by me.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>John 14:6</cite></blockquote></div>
@@ -68,6 +70,10 @@ export default async function Home() {
       </>}
       <h2 id="events">Upcoming Events</h2>
       {events.length > 0 ? <EventMarquee events={events} /> : <p className="mu">No upcoming events.</p>}
+      <h2 id="gallery">Our Church Gallery</h2>
+      <p style={{ textAlign: 'center', marginTop: 0 }}>Our pictures, our goals, and what God has helped us achieve.</p>
+      {galPics.length > 0 && <div className="gal home">{galPics.map(x => <Link key={x.id} className="gal-item" href="/gallery#pictures"><img src={x.image_url} alt={x.title || 'Church picture'} loading="lazy" /></Link>)}</div>}
+      <p style={{ textAlign: 'center' }}><Link className="btn" href="/gallery">Open the gallery →</Link></p>
       <h2 id="leaders">National Executive Board</h2>
       {heads.length > 0 ? <TeamMarquee people={heads} /> : <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>}
       <h2>Meet the Leaders</h2>
