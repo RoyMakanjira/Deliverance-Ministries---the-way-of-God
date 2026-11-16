@@ -1,6 +1,14 @@
+'use client'
+import { useEffect, useState } from 'react'
 import EventCard from '@/components/EventCard'
+import { today, upcoming } from '@/lib/dates'
 // Slowly scrolling strip of events, the same movement as TeamMarquee (moves right, loops seamlessly, pauses on hover).
-export default function EventMarquee({ events, showProv }) {
+// Events that are over are dropped on the visitor's device too, because a saved copy of the page may be days old.
+export default function EventMarquee({ events: all, showProv }) {
+  const [now, setNow] = useState(null)
+  useEffect(() => setNow(today()), [])
+  const events = now ? upcoming(all, now) : all
+  if (!events.length) return <p className="mu">No upcoming events.</p>
   let set = events
   while (set.length < 4) set = [...set, ...events]
   return (

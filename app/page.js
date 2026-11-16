@@ -3,7 +3,7 @@ import Register from '@/components/Register'
 import TeamMarquee from '@/components/TeamMarquee'
 import EventMarquee from '@/components/EventMarquee'
 import AssemblyMarquee from '@/components/AssemblyMarquee'
-import { since, upcoming } from '@/lib/dates'
+import { since, upcoming, today as todayZW } from '@/lib/dates'
 import Link from 'next/link'
 import { ASSEMBLIES, slug, sameAsm } from '@/lib/assemblies'
 import { withDefaults, MINISTRIES } from '@/lib/content'
@@ -21,7 +21,7 @@ const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
 const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advisor', 'adviser']
 const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
 export default async function Home() {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayZW()
   const [r, e, t, c, ph, ai, gal] = await Promise.all([
     db.from('reports').select('*').order('date', { ascending: false }).limit(12),
     db.from('events').select('*').gte('date', since(today)).order('date'),

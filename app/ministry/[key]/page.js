@@ -6,7 +6,7 @@ import Suggestion from '@/components/Suggestion'
 import MinistryItems from '@/components/MinistryItems'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
-import { since, upcoming } from '@/lib/dates'
+import { since, upcoming, today as todayZW } from '@/lib/dates'
 export const revalidate = 60
 export const dynamicParams = false
 export const generateStaticParams = () => MINISTRIES.map(key => ({ key }))
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }) {
 }
 export default async function Ministry({ params }) {
   if (!MINISTRIES.includes(params.key)) notFound()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayZW()
   const [{ data }, it, ev] = await Promise.all([db.from('content').select('*'), db.from('ministry_items').select('*').eq('ministry', params.key),
     db.from('events').select('*').contains('ministries', [params.key]).gte('date', since(today)).order('date')])
   const all = withDefaults(data), m = all.find(s => s.key === params.key)

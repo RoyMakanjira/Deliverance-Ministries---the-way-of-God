@@ -4,7 +4,7 @@ import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES, fromSlug, provOf, sameAsm, slug } from '@/lib/assemblies'
 import Person from '@/components/Person'
 import EventMarquee from '@/components/EventMarquee'
-import { since, upcoming } from '@/lib/dates'
+import { since, upcoming, today as todayZW } from '@/lib/dates'
 import { FbButton } from '@/components/Facebook'
 import { FACEBOOK } from '@/lib/social'
 export const revalidate = 60
@@ -16,7 +16,7 @@ const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
 export default async function Assembly({ params }) {
   const asm = fromSlug(params.slug)
   if (!asm) notFound()
-  const prov = provOf(asm), today = new Date().toISOString().slice(0, 10)
+  const prov = provOf(asm), today = todayZW()
   const [t, r, e, inf, ph] = await Promise.all([
     db.from('team').select('*').order('name'),
     db.from('reports').select('*').eq('prov', prov).order('date', { ascending: false }).limit(50),
