@@ -195,3 +195,39 @@ td .btn{padding:6px 12px;font-size:13px;margin:2px}
 .goal-no{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:1.1rem}
 .goal-by{font-weight:700;color:var(--blue);font-size:.9rem}
 .win-tick{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#1f9d55;color:#fff;font-weight:800;font-size:1.3rem}
+/* ===== modern look: soft light page, white header, rounded display headings, floating cards ===== */
+:root{--bg:#f7f9fc;--card:#fff;--tx:#142033;--mu:#5d6779;--blue:#0f3b95;--btn:#0f3b95;--navy:#042f6c;--deep:#031e45;--bd:#e4e8ef;--shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.07);--shadow-up:0 2px 4px rgba(16,24,40,.06),0 18px 40px rgba(16,24,40,.12)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1120;--card:#141c2f;--tx:#eef2f9;--mu:#9aa5ba;--blue:#8fb0ff;--btn:#2f5bd3;--navy:#0d1a36;--deep:#070e1f;--bd:#26304a;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);--shadow-up:0 18px 40px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--bg:#0b1120;--card:#141c2f;--tx:#eef2f9;--mu:#9aa5ba;--blue:#8fb0ff;--btn:#2f5bd3;--navy:#0d1a36;--deep:#070e1f;--bd:#26304a;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);--shadow-up:0 18px 40px rgba(0,0,0,.5)}
+body{line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.dt-day,.goal-no,.stat b{font-family:Chillax,ui-rounded,system-ui,sans-serif}
+h1,h2{text-transform:lowercase;letter-spacing:-.02em}h3{font-weight:600;letter-spacing:-.01em}
+h2{font-weight:600;font-size:clamp(30px,5.4vw,52px);line-height:1.05;margin:96px 0 28px}
+h2::after{width:44px;height:4px;border-radius:4px;margin:16px auto 0}
+.hero h1{font-weight:700}
+header{background:var(--card);background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);color:var(--tx);border-bottom:1px solid var(--bd);padding:12px 28px}
+.brand,header .brand{color:var(--tx)}.brand b{font-family:Chillax,ui-rounded,system-ui,sans-serif;font-weight:600;letter-spacing:-.01em}
+header img{box-shadow:0 0 0 1px var(--bd)}
+header nav a,header nav button{color:var(--tx);border-color:var(--bd);background:transparent;text-transform:none;letter-spacing:0;font-size:14px;font-weight:600}
+header nav a:hover,header nav a.on:hover,header nav button:hover{background:var(--navy);border-color:var(--navy);color:#fff}
+header nav a.on{color:#fff}
+header nav a:focus-visible{outline-color:var(--blue)}
+@media(max-width:700px){header{padding:8px 16px}header nav a,header nav button{font-size:13px}}
+.btn{padding:12px 26px;font-weight:700;box-shadow:0 6px 16px rgba(15,59,149,.18);transition:transform .2s,box-shadow .2s,background-color .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,59,149,.26)}
+.btn.g,.btn.w,.btn.fb{box-shadow:none}.btn.g{color:var(--tx);background:var(--card)}
+.card,.stat{border-color:transparent;border-radius:22px;box-shadow:var(--shadow)}
+a.card,.asm-card{transition:transform .25s,box-shadow .25s}a.card:hover,.asm-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-up)}
+.asm-card{border-color:transparent;border-radius:22px;box-shadow:var(--shadow)}
+.ministry,.event,.goal,.win{border-top-width:0;border-bottom:4px solid var(--red)}.goal{border-bottom-color:var(--blue)}.win{border-bottom-color:#1f9d55}.asm-card{border-top:0;border-bottom:4px solid var(--blue)}
+.ministry img,.about img{border-radius:0}.about img{border-radius:22px;box-shadow:var(--shadow)}
+.stat{padding:22px 14px}.stat b{font-size:40px;font-weight:600;line-height:1.1}
+.chips a{border-color:transparent;box-shadow:var(--shadow)}
+.person,.gal-item{border-radius:20px}
+input,select,textarea{padding:11px 12px;border-radius:12px;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 22%,transparent)}
+label{font-weight:600}
+.band{background:var(--deep);padding:88px 20px}.band.cta{background:radial-gradient(120% 140% at 0% 0%,#0f3b95 0%,#042f6c 45%,#031e45 100%)}
+.band.cta>div:first-child{font-family:Chillax,ui-rounded,system-ui,sans-serif;text-transform:lowercase;font-weight:600!important}
+footer{background:var(--deep);color:#c9d3e8;padding:48px 20px;line-height:1.9}
+@media(max-width:700px){h2{margin:64px 0 20px}.band{padding:56px 16px}}
