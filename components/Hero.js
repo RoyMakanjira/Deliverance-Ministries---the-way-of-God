@@ -7,7 +7,6 @@ export default function Hero({ hasReports, pics = [] }) {
   return (
     <section className="hero hero-magic">
       <HeroSlides pics={pics.length ? pics : ['/hero.jpg']} /><div className="hero-shade" aria-hidden="true" />
-      <div className="hero-logo"><img src="/logo.png" alt="" width="130" /></div>
       <p className="hero-in" style={{ animationDelay: '.3s' }}><span className="hero-welcome">Welcome to</span></p>
       <h1 aria-label="Deliverance Ministries & The Way of God">{LINES.map((ws, li) => <span key={li} className="hero-line" aria-hidden="true">
         {ws.map(w => <span key={w} className={`hero-word${w === 'God' ? ' hero-god' : ''}`} style={{ animationDelay: `${0.6 + 0.16 * n++}s` }}>{w}</span>)}</span>)}</h1>
