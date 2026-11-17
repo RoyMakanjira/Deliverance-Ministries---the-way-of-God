@@ -243,3 +243,9 @@ footer{background:var(--deep);color:#c9d3e8;padding:48px 20px;line-height:1.9}
 .hero-dots button.on{width:28px;background:#fff}.hero-dots button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 @media(max-width:700px){.hero-dots{right:50%;transform:translateX(50%);bottom:18px}}
 @media(prefers-reduced-motion:reduce){.hero-slide{transition:opacity .01s;transform:none!important}}
+/* Find an assembly: province cards take turns, blue then red */
+.card.prov{color:#fff;background:#0f3b95}.card.prov.red{background:#c8202b}
+.card.prov .mu{color:rgba(255,255,255,.82)}
+.card.prov .chips a{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff;box-shadow:none}
+.card.prov .chips a:hover{background:#fff;border-color:#fff;color:#0f3b95}.card.prov.red .chips a:hover{color:#c8202b}
+.card.prov .chips a:focus-visible{outline:2px solid #fff;outline-offset:2px}
