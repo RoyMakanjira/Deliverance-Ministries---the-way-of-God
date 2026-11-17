@@ -243,3 +243,9 @@ footer{background:var(--deep);color:#c9d3e8;padding:48px 20px;line-height:1.9}
 .hero-dots button.on{width:28px;background:#fff}.hero-dots button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 @media(max-width:700px){.hero-dots{right:50%;transform:translateX(50%);bottom:18px}}
 @media(prefers-reduced-motion:reduce){.hero-slide{transition:opacity .01s;transform:none!important}}
+/* bigger logo in the menu bar */
+header img{height:76px;width:76px;box-shadow:0 0 0 1px var(--bd),0 4px 14px rgba(16,24,40,.12);transition:transform .25s}
+.brand:hover img{transform:rotate(-6deg) scale(1.04)}
+.brand b{font-size:19px;line-height:1.2;max-width:300px}
+@media(max-width:700px){header img{height:56px;width:56px}.brand b{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.brand:hover img{transform:none}}
