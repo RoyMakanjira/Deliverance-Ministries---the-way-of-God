@@ -249,3 +249,9 @@ header img{height:76px;width:76px;box-shadow:0 0 0 1px var(--bd),0 4px 14px rgba
 .brand b{font-size:19px;line-height:1.2;max-width:300px}
 @media(max-width:700px){header img{height:56px;width:56px}.brand b{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.brand:hover img{transform:none}}
+/* menu pages: the page you are on is filled navy */
+header nav a.cur{background:var(--navy);border-color:var(--navy);color:#fff}header nav a.on.cur{background:#a8141e;border-color:#a8141e}
+.foot-links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;margin:8px 0}.foot-links a{color:#fff;text-decoration:none}.foot-links a:hover{text-decoration:underline}
+.involve .card{color:var(--tx);text-decoration:none;border-bottom:4px solid var(--red)}.involve .more{font-weight:700;color:var(--blue)}
+.events-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));align-items:start}
+.first-h2>h2:first-child{margin-top:0}

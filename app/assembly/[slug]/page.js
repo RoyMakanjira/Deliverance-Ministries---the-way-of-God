@@ -1,3 +1,4 @@
+import { SiteHeader, SiteFooter, OnThisPage } from '@/components/Site'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { supabase as db } from '@/lib/supabase'
@@ -32,10 +33,10 @@ export default async function Assembly({ params }) {
   const pastor = leaders.find(x => x.role === 'Assembly Pastor')
   const map = info.map_link || (info.address && `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.address)}`)
   return (<>
-    <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
-      <nav><Link href="/#assemblies">All assemblies</Link><a href="#location">Location</a><a href="#church">Our Church</a><a href="#sunday">A Normal Sunday</a><a href="#leaders">Leaders</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>
+    <SiteHeader active="assemblies" />
     <section className="hero small"><p>{prov}</p><h1>{asm}</h1><p>Assembly{pastor && ` · Pastor ${pastor.name}`}</p></section>
     <div className="wrap">
+      <OnThisPage links={[['#location', 'Location'], ['#church', 'Our Church'], ['#sunday', 'A Normal Sunday'], ['#leaders', 'Leaders'], ['/assemblies', 'All assemblies']]} />
       <h2 id="location">Where we are</h2>
       {info.address || info.service_time ? <div className="card asm-loc">
         <div>{info.address && <p><b>📍 {info.address}</b></p>}{info.service_time && <p>⛪ {info.service_time}</p>}{pastor && <p>🙏 Pastor {pastor.name}</p>}
@@ -58,7 +59,6 @@ export default async function Assembly({ params }) {
       {others.length > 0 && <><h2>Other {prov} assemblies</h2>
         <div className="chips">{others.map(a => <Link key={a} href={`/assembly/${slug(a)}`}>{a}</Link>)}</div></>}
     </div>
-    <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(28px,7vw,44px)', fontWeight: 800 }}>STAY CONNECTED</div><p>Follow us on Facebook for services, events and news.</p><FbButton /></div>
-    <footer style={{ marginTop: 0 }}><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div><Link href="/">← Back to home</Link></div><div><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook: @wogchurchint</a></div><div>© 2026 D.M & W.O.G</div></footer>
+    <SiteFooter />
   </>)
 }

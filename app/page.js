@@ -1,95 +1,47 @@
-import { supabase as db } from '@/lib/supabase'
-import Register from '@/components/Register'
-import TeamMarquee from '@/components/TeamMarquee'
-import EventMarquee from '@/components/EventMarquee'
-import AssemblyMarquee from '@/components/AssemblyMarquee'
-import { since, upcoming, today as todayZW } from '@/lib/dates'
 import Link from 'next/link'
-import { ASSEMBLIES, slug, sameAsm } from '@/lib/assemblies'
-import { withDefaults, MINISTRIES } from '@/lib/content'
-import Give from '@/components/Give'
-import Partners from '@/components/Partners'
+import { SiteHeader, SiteFooter } from '@/components/Site'
 import Hero from '@/components/Hero'
 import LivePlayer from '@/components/LivePlayer'
-import { FbButton } from '@/components/Facebook'
-import { FACEBOOK, WHATSAPP, EVANGELISM_PHONE, EVANGELISM_TEL, EVANGELISM_WHATSAPP } from '@/lib/social'
+import { getContent, getTeam, getAsmCards, getEvents, getReports, getGalleryPics } from '@/lib/site'
+import { MINISTRIES } from '@/lib/content'
+import { AboutBlock, MinistriesBlock, AssemblyStrip, EventsBlock, GalleryTeaser, More } from '@/components/Blocks'
+import TeamMarquee from '@/components/TeamMarquee'
 export const revalidate = 60
-const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
-const ORD = ['Bishop', 'Overseer', 'Secretary', 'Treasurer', 'Administrator']
-const oi = r => (ORD.indexOf(r) < 0 ? 9 : ORD.indexOf(r))
-// titles shown under National Executive Board, in this order; anyone else goes under Meet the Leaders
-const TOP = ['bishop', 'overseer', 'secretary', 'administrator', 'admin', 'advisor', 'adviser']
-const ti = x => TOP.indexOf(x.role.trim().toLowerCase().replace(/s$/, ''))
+// Homepage: a taste of every page; the menu buttons open the full pages
 export default async function Home() {
-  const today = todayZW()
-  const [r, e, t, c, ph, ai, gal] = await Promise.all([
-    db.from('reports').select('*').order('date', { ascending: false }).limit(12),
-    db.from('events').select('*').gte('date', since(today)).order('date'),
-    db.from('team').select('*').order('name'),
-    db.from('content').select('*'),
-    db.from('assembly_photos').select('asm,image_url').eq('kind', 'church').order('created_at'),
-    db.from('assembly_info').select('asm,cover_url').not('cover_url', 'is', null),
-    db.from('gallery').select('id,title,image_url').eq('kind', 'photo').order('created_at', { ascending: false }).limit(6),
-  ])
-  const galPics = gal.data || []
-  const sections = withDefaults(c.data), about = sections.find(s => s.key === 'about'), how = sections.find(s => s.key === 'giving'), partners = sections.find(s => s.key === 'partners'), partnerPay = sections.find(s => s.key === 'partner-pay')
-  const ministries = sections.filter(s => MINISTRIES.includes(s.key))
-  const liveRow = (c.data || []).find(x => x.key === 'live' && x.body), live = liveRow && { title: liveRow.title || 'Live service', url: liveRow.body }
-  const reports = r.data || [], events = upcoming(e.data, today), team = t.data || []
-  const b = reports.filter(x => x.women != null)
-  const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0)
-  const heads = team.filter(x => ti(x) >= 0).sort((a, c) => ti(a) - ti(c))
-  const top = team.filter(x => ti(x) < 0 && x.role !== 'Assembly Pastor').sort((a, c) => oi(a.role) - oi(c.role))
-  const pastors = team.filter(x => x.role === 'Assembly Pastor')
-  const asmCards = Object.entries(ASSEMBLIES).flatMap(([p, a]) => a.map(asm => ({ asm, prov: p,
-    cover: (ai.data || []).find(x => x.asm === asm)?.cover_url || (ph.data || []).find(x => x.asm === asm)?.image_url, pastor: pastors.find(x => sameAsm(x.asm, asm))?.name })))
+  const [content, team, events, reports, galPics] = await Promise.all([getContent(), getTeam(), getEvents(), getReports(1), getGalleryPics()])
+  const cards = await getAsmCards(team.pastors)
+  const { raw, sections, get } = content
+  const liveRow = raw.find(x => x.key === 'live' && x.body), live = liveRow && { title: liveRow.title || 'Live service', url: liveRow.body }
+  const pics = (raw.find(x => x.key === 'hero')?.body || '').split('\n').filter(Boolean)
   return (<>
-    <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
-      <nav>{live && <a className="on" href="#live">🔴 Watch Live</a>}<a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="/gallery">Gallery</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
-    <Hero hasReports={reports.length > 0} pics={((c.data || []).find(x => x.key === 'hero')?.body || '').split('\n').filter(Boolean)} />
+    <SiteHeader active="home" />
+    <Hero hasReports={reports.length > 0} pics={pics} />
     {live && <div className="wrap" id="live" style={{ paddingTop: 32 }}><LivePlayer live={live} /></div>}
     <div className="band"><blockquote>The Spirit of the Lord is upon me, because he hath anointed me to preach the gospel to the poor; he hath sent me to heal the brokenhearted, to preach deliverance to the captives, and recovering of sight to the blind, to set at liberty them that are bruised.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>Luke 4:18</cite></blockquote></div>
     <div className="wrap">
-      <h2 id="about">{about.title}</h2>
-      <div className={`about${about.image_url ? '' : ' solo'}`}>{about.image_url && <img src={about.image_url} alt="" />}<div><Paras t={about.body} /></div></div>
-      <h2 id="ministries">Our Ministries</h2>
-      <div className="grid">{ministries.map(m => <Link href={`/ministry/${m.key}`} className="card ministry" key={m.key}>{m.image_url && <img src={m.image_url} alt="" />}
-        <h3>{m.title}</h3>{m.leader && <div className="mu">Led by {m.leader}</div>}<Paras t={m.body} />
-        <span className="more">{m.key === 'children' ? 'Open page →' : 'Open page & send an anonymous message →'}</span></Link>)}</div>
-      <h2 id="assemblies">Our Assemblies</h2>
-      <AssemblyMarquee assemblies={asmCards} />
-      <h3 style={{ margin: '28px 0 12px', textAlign: 'center' }}>Find an assembly</h3>
-      <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
-        <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
-      {reports.length > 0 && <>
-        <h2 id="reports">Latest Reports</h2>
-        {b.length > 0 && <div className="grid stats" style={{ marginBottom: 16 }}>{[['Total present', reports.reduce((a, x) => a + x.count, 0)], ['Women', sum('women')], ['Men', sum('men')], ['Youth', sum('youth')], ['Sunday School', sum('sunday')]].map(([l, n]) => <div className="stat" key={l}><b>{n}</b>{l}</div>)}</div>}
-        <div className="grid">{reports.map(x => <div className="card" key={x.id}><h3>{x.title || 'Service report'}</h3>
-          <div className="mu">{x.prov}{x.asm && ` · ${x.asm}`} · {x.date}</div><p><b>{x.count}</b> attended{x.women != null && ` (W ${x.women}, M ${x.men}, Youth ${x.youth}, SS ${x.sunday})`}<br />Preacher: {x.preacher || '—'}</p>{x.word && <p><b>The word:</b> {x.word}</p>}</div>)}
-        </div>
-      </>}
-      <h2 id="events">Upcoming Events</h2>
-      {events.length > 0 ? <EventMarquee events={events} /> : <p className="mu">No upcoming events.</p>}
-      <h2 id="gallery">Our Church Gallery</h2>
-      <p style={{ textAlign: 'center', marginTop: 0 }}>Our pictures, our goals, and what God has helped us achieve.</p>
-      {galPics.length > 0 && <div className="gal home">{galPics.map(x => <Link key={x.id} className="gal-item" href="/gallery#pictures"><img src={x.image_url} alt={x.title || 'Church picture'} loading="lazy" /></Link>)}</div>}
-      <p style={{ textAlign: 'center' }}><Link className="btn" href="/gallery">Open the gallery →</Link></p>
-      <h2 id="leaders">National Executive Board</h2>
-      {heads.length > 0 ? <TeamMarquee people={heads} /> : <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>}
-      <h2>Meet the Leaders</h2>
-      {top.length > 0 && <TeamMarquee people={top} />}
-      {pastors.length > 0 && <><h3 style={{ margin: '28px 0 12px' }}>Assembly Pastors</h3><TeamMarquee people={pastors} /></>}
-      <h2 id="give">Tithes, Donations &amp; Pledges</h2>
-      <p className="mu" style={{ textAlign: 'center', maxWidth: 640, margin: '-10px auto 20px' }}>“Bring ye all the tithes into the storehouse…” — Malachi 3:10. Choose what you are giving and where it should go: the Bishop’s Wallet or any assembly.</p>
-      <Give how={how} />
-      <h2 id="partners">{partners.title}</h2>
-      <div className={`about${partners.image_url ? '' : ' solo'}`} style={{ marginBottom: 20 }}>{partners.image_url && <img src={partners.image_url} alt="" />}<div><Paras t={partners.body} /></div></div>
-      <p style={{ textAlign: 'center', margin: '0 0 20px' }}>Speak to the evangelism team: <b>{EVANGELISM_PHONE}</b><br /><a className="btn" href={EVANGELISM_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a> <a className="btn g" href={`tel:${EVANGELISM_TEL}`}>Call</a></p>
-      <Partners how={partnerPay} />
-      <h2 id="register">Join us / Register</h2><Register />
+      <h2 id="about">{get('about').title}</h2>
+      <AboutBlock about={get('about')} />
+      <h2>Our Ministries</h2>
+      <MinistriesBlock ministries={sections.filter(s => MINISTRIES.includes(s.key))} />
+      <h2>Our Assemblies</h2>
+      <AssemblyStrip cards={cards} />
+      <More href="/assemblies">Find an assembly</More>
+      <h2>Upcoming Events</h2>
+      <EventsBlock events={events} />
+      <More href="/events">All events</More>
+      <h2>Our Church Gallery</h2>
+      <GalleryTeaser pics={galPics} />
+      <h2>National Executive Board</h2>
+      {team.heads.length > 0 ? <TeamMarquee people={team.heads} /> : <p className="mu" style={{ textAlign: 'center' }}>Coming soon.</p>}
+      <More href="/leaders">Meet all our leaders</More>
+      <h2>Get Involved</h2>
+      <div className="grid involve">
+        <Link className="card" href="/give"><h3>Give</h3><p className="mu">Tithes, donations and pledges to the Bishop’s Wallet or any assembly.</p><span className="more">Give now →</span></Link>
+        <Link className="card" href="/partners"><h3>Partner with Evangelism</h3><p className="mu">Support the evangelism team so the gospel reaches every part of the world.</p><span className="more">Become a partner →</span></Link>
+        <Link className="card" href="/register"><h3>Join Us</h3><p className="mu">New here? Register and the church admin will welcome you.</p><span className="more">Register →</span></Link>
+      </div>
     </div>
-    <div className="band cta" style={{ marginTop: 72 }}><div style={{ fontSize: 'clamp(34px,10vw,56px)', fontWeight: 800 }}>QUESTIONS?</div><p>Message the church admin on WhatsApp, or follow us on Facebook for services, events and news.</p>
-      <a className="btn w" href={WHATSAPP} target="_blank" rel="noopener noreferrer">Let's Talk Now</a><FbButton /></div>
-    <footer><div><b>Deliverance Ministries & The Way of God Church Int</b></div><div>{Object.keys(ASSEMBLIES).join(' · ')}</div><div><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook: @wogchurchint</a></div><div>© 2026 D.M & W.O.G</div></footer>
+    <SiteFooter />
   </>)
 }
