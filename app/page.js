@@ -59,7 +59,7 @@ export default async function Home() {
       <h2 id="assemblies">Our Assemblies</h2>
       <AssemblyMarquee assemblies={asmCards} />
       <h3 style={{ margin: '28px 0 12px', textAlign: 'center' }}>Find an assembly</h3>
-      <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a], i) => <div className={`card prov ${i % 2 ? 'red' : 'blue'}`} key={p}><h3>{p}</h3>
+      <div className="grid">{Object.entries(ASSEMBLIES).map(([p, a]) => <div className="card" key={p} style={{ borderTop: '5px solid var(--blue)' }}><h3>{p}</h3>
         <div className="mu">{a.length} {a.length === 1 ? 'assembly' : 'assemblies'}</div><div className="chips" style={{ justifyContent: 'flex-start', marginTop: 10 }}>{a.map(x => <Link key={x} href={`/assembly/${slug(x)}`}>{x}</Link>)}</div></div>)}</div>
       {reports.length > 0 && <>
         <h2 id="reports">Latest Reports</h2>
