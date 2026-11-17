@@ -1,15 +1,12 @@
-// Animated welcome banner. Pure CSS (see .hero-* in globals.css); motion is switched off for prefers-reduced-motion.
+// Welcome banner: the church name on top of full-width church pictures (see .hero-* in globals.css).
+// pics: picture links chosen in the admin page; without any, the original church picture.
+import HeroSlides from '@/components/HeroSlides'
 const LINES = [['Deliverance', 'Ministries'], ['&', 'The', 'Way', 'of', 'God']]
-// fixed pseudo-random sparkles so server and browser render the same markup
-const SPARKS = Array.from({ length: 22 }, (_, i) => ({
-  left: (i * 37 + 11) % 100, size: 3 + ((i * 7) % 5), dur: 9 + ((i * 5) % 9), delay: -((i * 13) % 17),
-}))
-export default function Hero({ hasReports }) {
+export default function Hero({ hasReports, pics = [] }) {
   let n = 0
   return (
     <section className="hero hero-magic">
-      <div className="hero-bg" aria-hidden="true" /><div className="hero-rays" aria-hidden="true" />
-      <div className="hero-sparks" aria-hidden="true">{SPARKS.map((s, i) => <span key={i} style={{ left: `${s.left}%`, width: s.size, height: s.size, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }} />)}</div>
+      <HeroSlides pics={pics.length ? pics : ['/hero.jpg']} /><div className="hero-shade" aria-hidden="true" />
       <div className="hero-logo"><img src="/logo.png" alt="" width="130" /></div>
       <p className="hero-in" style={{ animationDelay: '.3s' }}><span className="hero-welcome">Welcome to</span></p>
       <h1 aria-label="Deliverance Ministries & The Way of God">{LINES.map((ws, li) => <span key={li} className="hero-line" aria-hidden="true">

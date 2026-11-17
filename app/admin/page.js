@@ -5,6 +5,7 @@ import { ASSEMBLIES, BISHOP, EVANGELISM, PROV, provOf, sameAsm, slug } from '@/l
 import Person from '@/components/Person'
 import AdminLogin from '@/components/AdminLogin'
 import LiveAdmin from '@/components/LiveAdmin'
+import HeroAdmin from '@/components/HeroAdmin'
 import AdminBar from '@/components/AdminBar'
 import MinistryItemsAdmin from '@/components/MinistryItemsAdmin'
 import GalleryAdmin from '@/components/GalleryAdmin'
@@ -23,7 +24,7 @@ const grp = m => {
 }
 const F = ({ l, ...p }) => <div><label>{l}</label><input {...p} /></div>
 // jump menu at the top of the dashboard; true = national admin only
-const SECTIONS = [['live', 'Live service', true], ['content', 'Website content', true], ['ministry-pages', 'Ministry pages', true], ['gallery', 'Church gallery', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
+const SECTIONS = [['live', 'Live service', true], ['banner', 'Banner pictures', true], ['content', 'Website content', true], ['ministry-pages', 'Ministry pages', true], ['gallery', 'Church gallery', true], ['giving', 'Giving'], ['assembly', 'Manage an assembly'], ['add-congregant', 'Add congregant'], ['congregants', 'All congregants'], ['report', 'Report'], ['add-event', 'Add event'], ['events', 'Events & attendance'], ['team-admin', 'Meet the Leaders', true]]
 const goTo = id => setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
 export default function Admin() {
   const [me, setMe] = useState(null), [ready, setReady] = useState(false), [members, setMembers] = useState([])
@@ -264,6 +265,8 @@ export default function Admin() {
       {me.role === 'super' && <>
         <h2 id="live">Live service</h2>
         <LiveAdmin />
+        <h2 id="banner">Banner pictures</h2>
+        <HeroAdmin upload={uploadMedia} path={photoPath} />
         <h2 id="content">Website content</h2>
         <p className="mu" style={{ textAlign: 'center' }}>Change the About Us, ministry (Men’s, Women’s, Youth, Children’s) and “How to pay” sections on the homepage. Leave a blank line between paragraphs. Put your EcoCash / bank details in “How to pay”. <b>Click a section's name below to open it and edit.</b></p>
         {content.map(s => <details key={s.key + (s.updated_at || '')} className="card" style={{ marginBottom: 10 }}><summary><b>{s.title}</b></summary>

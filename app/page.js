@@ -46,7 +46,7 @@ export default async function Home() {
   return (<>
     <header><div className="brand"><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></div>
       <nav>{live && <a className="on" href="#live">🔴 Watch Live</a>}<a href="#about">About</a><a href="#ministries">Ministries</a><a href="#assemblies">Assemblies</a>{reports.length > 0 && <a href="#reports">Reports</a>}<a href="#events">Events</a><a href="#leaders">Leaders</a><a href="/gallery">Gallery</a><a className="on" href="#give">Give</a><a className="on" href="#partners">Partners</a><a href="#register">Register</a><a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><a href="/admin">Admin</a></nav></header>
-    <Hero hasReports={reports.length > 0} />
+    <Hero hasReports={reports.length > 0} pics={((c.data || []).find(x => x.key === 'hero')?.body || '').split('\n').filter(Boolean)} />
     {live && <div className="wrap" id="live" style={{ paddingTop: 32 }}><LivePlayer live={live} /></div>}
     <div className="band"><blockquote>The Spirit of the Lord is upon me, because he hath anointed me to preach the gospel to the poor; he hath sent me to heal the brokenhearted, to preach deliverance to the captives, and recovering of sight to the blind, to set at liberty them that are bruised.<cite style={{ display: 'block', fontSize: 13, marginTop: 12 }}>Luke 4:18</cite></blockquote></div>
     <div className="wrap">

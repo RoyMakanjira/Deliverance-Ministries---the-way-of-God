@@ -231,3 +231,15 @@ label{font-weight:600}
 .band.cta>div:first-child{font-family:Chillax,ui-rounded,system-ui,sans-serif;text-transform:lowercase;font-weight:600!important}
 footer{background:var(--deep);color:#c9d3e8;padding:48px 20px;line-height:1.9}
 @media(max-width:700px){h2{margin:64px 0 20px}.band{padding:56px 16px}}
+/* banner: church name on top of full-width pictures that fade into each other and slowly zoom */
+.hero-magic{background:#031e45}
+.hero-slides{position:absolute;inset:0;z-index:-3;overflow:hidden}
+.hero-slide{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transform:scale(1.02);transition:opacity 1.6s ease,transform 7.5s ease-out}
+.hero-slide.on{opacity:1;transform:scale(1.12)}
+.hero-shade{position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,rgba(3,20,48,.55) 0%,rgba(3,20,48,.35) 40%,rgba(3,20,48,.8) 100%),radial-gradient(ellipse at center,rgba(0,0,0,0) 30%,rgba(0,0,0,.35) 100%)}
+.hero-magic h1,.hero-magic p{text-shadow:0 2px 24px rgba(0,0,0,.45)}
+.hero-dots{position:absolute;bottom:26px;right:28px;display:flex;gap:8px}
+.hero-dots button{width:10px;height:10px;padding:0;border-radius:999px;border:0;background:rgba(255,255,255,.5);cursor:pointer;transition:width .3s,background-color .3s}
+.hero-dots button.on{width:28px;background:#fff}.hero-dots button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:700px){.hero-dots{right:50%;transform:translateX(50%);bottom:18px}}
+@media(prefers-reduced-motion:reduce){.hero-slide{transition:opacity .01s;transform:none!important}}
