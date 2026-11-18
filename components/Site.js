@@ -12,7 +12,7 @@ const PAGES = [
 export async function SiteHeader({ active }) {
   const live = await getLive()
   return (
-    <header><Link href="/" className="brand" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
+    <header className="site"><Link href="/" className="brand" aria-label="Deliverance Ministries & The Way of God – home" style={{ margin: 0 }}><img src="/logo.png" alt="logo" /><b>Deliverance Ministries & The Way of God</b></Link>
       <nav>{live && <Link className={`on${active === 'live' ? ' cur' : ''}`} href="/live">🔴 Watch Live</Link>}
         {PAGES.map(([href, label, key, cls]) => <Link key={key} href={href} className={[cls, active === key && 'cur'].filter(Boolean).join(' ') || undefined} aria-current={active === key ? 'page' : undefined}>{label}</Link>)}
         <a href={FACEBOOK} target="_blank" rel="noopener noreferrer">Facebook</a><Link href="/admin">Admin</Link></nav></header>

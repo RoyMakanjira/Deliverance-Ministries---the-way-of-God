@@ -264,3 +264,13 @@ header nav a.cur{background:var(--navy);border-color:var(--navy);color:#fff}head
 .testimony figcaption{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px;margin-top:6px;font-size:14px;color:var(--mu)}.testimony figcaption b{color:var(--tx)}.testimony figcaption small{flex-basis:100%;opacity:.8}
 .testimony video{display:block;width:100%;aspect-ratio:16/9;background:#000}
 .tes-vid{margin:0 0 6px;font-weight:700;font-size:14px;color:var(--red)}
+/* public menu: one slim row beside the logo, so pages (and the live video) get the screen; extra buttons scroll sideways */
+header.site{flex-wrap:nowrap;gap:18px;padding:8px 24px}
+header.site .brand{flex:none}header.site img{height:62px;width:62px}
+header.site .brand b{display:none}@media(min-width:1560px){header.site .brand b{display:block;font-size:17px;max-width:220px}}
+header.site nav{flex:1 1 auto;min-width:0;flex-wrap:nowrap;justify-content:flex-start;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+header.site nav::-webkit-scrollbar{display:none}header.site nav>:first-child{margin-left:auto}header.site nav>:last-child{margin-right:24px}
+header.site nav a{padding:7px 13px;font-size:14px}
+@media(max-width:700px){header.site{padding:6px 12px;gap:10px}header.site img{height:46px;width:46px}header.site nav{width:auto}header.site nav a{padding:6px 11px;font-size:13px}}
+/* live video: as big as the screen allows, never taller than the window */
+.live-box{max-width:1280px}.live-frame{max-width:calc((100vh - 190px) * 16 / 9);max-width:calc((100dvh - 190px) * 16 / 9);margin:0 auto 10px}
