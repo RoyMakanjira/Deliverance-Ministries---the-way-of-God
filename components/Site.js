@@ -6,7 +6,7 @@ import { FACEBOOK, WHATSAPP } from '@/lib/social'
 // Menu shared by every public page; each button opens its own page. Give and Partners stay red.
 const PAGES = [
   ['/', 'Home', 'home'], ['/about', 'About', 'about'], ['/ministries', 'Ministries', 'ministries'], ['/assemblies', 'Assemblies', 'assemblies'],
-  ['/events', 'Events', 'events'], ['/leaders', 'Leaders', 'leaders'], ['/reports', 'Reports', 'reports'], ['/gallery', 'Gallery', 'gallery'],
+  ['/events', 'Events', 'events'], ['/leaders', 'Leaders', 'leaders'], ['/reports', 'Reports', 'reports'], ['/gallery', 'Gallery', 'gallery'], ['/testimonies', 'Testimonies', 'testimonies'],
   ['/give', 'Give', 'give', 'on'], ['/partners', 'Partners', 'partners', 'on'], ['/register', 'Register', 'register'],
 ]
 export async function SiteHeader({ active }) {

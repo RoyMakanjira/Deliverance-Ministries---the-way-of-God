@@ -255,3 +255,10 @@ header nav a.cur{background:var(--navy);border-color:var(--navy);color:#fff}head
 .involve .card{color:var(--tx);text-decoration:none;border-bottom:4px solid var(--red)}.involve .more{font-weight:700;color:var(--blue)}
 .events-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));align-items:start}
 .first-h2>h2:first-child{margin-top:0}
+/* testimonies: quote cards */
+.tes-grid{columns:3 300px;column-gap:16px}.tes-grid>*{break-inside:avoid;margin:0 0 16px}
+.testimony{padding:0;overflow:hidden;border-bottom:4px solid var(--red)}.testimony img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}
+.tes-body{position:relative;padding:22px 22px 20px}
+.tes-mark{position:absolute;top:-6px;right:16px;font-family:Georgia,serif;font-size:96px;line-height:1;color:var(--red);opacity:.18}
+.testimony h3{margin:0 0 8px}.testimony blockquote{margin:0;font-size:16px}.testimony blockquote p{margin:0 0 10px}
+.testimony figcaption{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px;margin-top:6px;font-size:14px;color:var(--mu)}.testimony figcaption b{color:var(--tx)}.testimony figcaption small{flex-basis:100%;opacity:.8}
