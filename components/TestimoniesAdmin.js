@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase as db } from '@/lib/supabase'
 import { ASSEMBLIES } from '@/lib/assemblies'
-const setupMsg = m => m.includes('testimonies') ? 'Run supabase/testimonies.sql in Supabase first, then try again.' : m
+const setupMsg = m => m.includes('media_type') ? 'Run supabase/testimony-media.sql in Supabase first, then try again.' : m.includes('testimonies') ? 'Run supabase/testimonies.sql in Supabase first, then try again.' : m
 // National admin: read testimonies sent from the site, publish or delete them, or add one yourself
 export default function TestimoniesAdmin({ upload, path }) {
   const [rows, setRows] = useState(null), [busy, setBusy] = useState(false), [msg, setMsg] = useState('')
@@ -26,10 +26,10 @@ export default function TestimoniesAdmin({ upload, path }) {
   }
   async function add(e) {
     e.preventDefault(); const form = e.target, f = new FormData(form), file = f.get('photo')
-    setBusy(true); setMsg(''); let image_url = null
+    setBusy(true); setMsg(''); let image_url = null, media_type = 'image'
     try {
-      if (file?.size) image_url = (await upload(file)).media_url
-      const { error } = await db.from('testimonies').insert({ name: f.get('name').trim() || null, asm: f.get('asm') || null, title: f.get('title').trim() || null, body: f.get('body').trim(), image_url, published: true })
+      if (file?.size) ({ media_url: image_url, media_type } = await upload(file))
+      const { error } = await db.from('testimonies').insert({ name: f.get('name').trim() || null, asm: f.get('asm') || null, title: f.get('title').trim() || null, body: f.get('body').trim(), image_url, media_type, published: true })
       if (error) throw new Error(setupMsg(error.message))
       form.reset(); setMsg('Testimony added and published.'); load()
     } catch (err) {
@@ -42,7 +42,9 @@ export default function TestimoniesAdmin({ upload, path }) {
   const waiting = rows.filter(r => !r.published), shown = rows.filter(r => r.published)
   const Row = ({ x }) => <div className="card" style={{ marginBottom: 10, borderLeft: `5px solid ${x.published ? '#1f9d55' : 'var(--red)'}` }}>
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      {x.image_url && <img src={x.image_url} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />}
+      {x.image_url && (x.media_type === 'video'
+        ? <video src={x.image_url} controls playsInline preload="metadata" style={{ width: 200, borderRadius: 8, background: '#000' }} />
+        : <a href={x.image_url} target="_blank" rel="noopener noreferrer"><img src={x.image_url} alt="" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8 }} /></a>)}
       <div style={{ flex: 1, minWidth: 0 }}><b>{x.title || 'Testimony'}</b><div className="mu">{[x.name || 'Anonymous', x.asm, x.created_at.slice(0, 10)].filter(Boolean).join(' · ')}</div>
         <p style={{ whiteSpace: 'pre-wrap', margin: '8px 0' }}>{x.body}</p>
         <button className="btn" onClick={() => setPublished(x, !x.published)}>{x.published ? 'Hide from site' : 'Publish'}</button>
@@ -57,7 +59,7 @@ export default function TestimoniesAdmin({ upload, path }) {
         <div><label>Name (empty = anonymous)</label><input name="name" /></div>
         <div><label>Assembly</label><select name="asm"><option value=""></option>{Object.entries(ASSEMBLIES).map(([p, a]) => <optgroup key={p} label={p}>{a.map(x => <option key={x}>{x}</option>)}</optgroup>)}</select></div>
         <div><label>Title</label><input name="title" /></div>
-        <div><label>Picture (optional)</label><input name="photo" type="file" accept="image/*" /></div>
+        <div><label>Picture or video (optional)</label><input name="photo" type="file" accept="image/*,video/*" /></div>
         <div style={{ gridColumn: '1/-1' }}><label>Testimony *</label><textarea name="body" required rows={5} /></div></div>
         <button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Add and publish'}</button></form></details>
     <h3>On the site ({shown.length})</h3>
