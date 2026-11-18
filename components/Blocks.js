@@ -10,8 +10,13 @@ import { EVANGELISM_PHONE, EVANGELISM_TEL, EVANGELISM_WHATSAPP } from '@/lib/soc
 export const Paras = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
 export const More = ({ href, children }) => <p style={{ textAlign: 'center', marginTop: 20 }}><Link className="btn g" href={href}>{children} →</Link></p>
 
+// the church's name in bold wherever it appears, however it was typed (& or and, extra spaces, Church Int…)
+const NAME = /(deliverance\s+ministries\s+(?:&|and)\s+the\s+way\s+of\s+god(?:\s+church)?(?:\s+int(?:ernational\b|\.|\b))?)/gi
+const BoldName = ({ t }) => t.split(NAME).map((part, i) => i % 2 ? <strong key={i}>{part.replace(/\s+/g, ' ')}</strong> : part)
+const NameParas = ({ t }) => t.split(/\n+/).filter(Boolean).map((p, i) => <p key={i}><BoldName t={p} /></p>)
+
 export const AboutBlock = ({ about }) =>
-  <div className={`about${about.image_url ? '' : ' solo'}`}>{about.image_url && <img src={about.image_url} alt="" />}<div><Paras t={about.body} /></div></div>
+  <div className={`about${about.image_url ? '' : ' solo'}`}>{about.image_url && <img src={about.image_url} alt="" />}<div><NameParas t={about.body} /></div></div>
 
 export const MinistriesBlock = ({ ministries }) =>
   <div className="grid">{ministries.map(m => <Link href={`/ministry/${m.key}`} className="card ministry" key={m.key}>{m.image_url && <img src={m.image_url} alt="" />}
